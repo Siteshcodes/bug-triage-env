@@ -1,7 +1,9 @@
-# server/tasks.py
+# server/task.py
+import sys
+sys.path.insert(0, "/app")
+
 from typing import Tuple, List
 from model import BugReport, TriageAction
-
 # ─────────────────────────────────────────────
 # BUG REPORT DATASET
 # ─────────────────────────────────────────────

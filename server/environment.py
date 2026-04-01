@@ -1,12 +1,14 @@
 # server/environment.py
+import sys
+sys.path.insert(0, "/app")
+sys.path.insert(0, "/app/server")
+
 import uuid
 import random
 from typing import Optional
 from openenv.core.env_server.interfaces import Environment
 from model import TriageAction, TriageObservation, TriageState, BugReport
 from task import TASKS, grade_action
-
-
 class BugTriageEnvironment(Environment):
     """
     Bug Report Triage RL environment.
