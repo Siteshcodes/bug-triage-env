@@ -1,4 +1,14 @@
-# bug-triage-env
+---
+title: Bug Triage Env
+emoji: 🐛
+colorFrom: red
+colorTo: yellow
+sdk: docker
+pinned: false
+tags:
+  - openenv
+---
+
 # Bug Triage Environment 🐛
 
 An OpenEnv reinforcement learning environment where an AI agent
@@ -65,7 +75,7 @@ Rewards are provided at every step (not just end of episode):
 
 ### Run locally
 ```bash
-git clone https://huggingface.co/spaces/YOUR_HF_USERNAME/bug-triage-env
+git clone https://huggingface.co/spaces/Siteshcodes/bug-triage-env
 cd bug-triage-env
 pip install -r server/requirements.txt
 uvicorn server.app:app --host 0.0.0.0 --port 7860
@@ -103,9 +113,9 @@ bug-triage-env/
 ├── server/
 │   ├── app.py           # FastAPI + OpenEnv entrypoint
 │   ├── environment.py   # BugTriageEnvironment core logic
-│   ├── tasks.py         # Bug reports + graders
+│   ├── task.py          # Bug reports + graders
 │   └── requirements.txt
-├── models.py            # Pydantic/dataclass models
+├── model.py             # Dataclass models
 ├── client.py            # WebSocket client
 ├── baseline.py          # Groq inference script
 ├── openenv.yaml         # OpenEnv spec metadata
