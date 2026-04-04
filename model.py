@@ -1,9 +1,14 @@
-#models.py
+# model.py
 from dataclasses import dataclass, field
 from typing import List, Optional
+from pydantic import Field
 from openenv.core.env_server import Action, Observation
 from openenv.core.env_server.types import State
-from pydantic import Field
+
+
+# ─────────────────────────────────────────────
+# BugReport — plain dataclass (not an OpenEnv type)
+# ─────────────────────────────────────────────
 
 @dataclass
 class BugReport:
@@ -16,6 +21,10 @@ class BugReport:
     comments: List[str]      # top comments for context
 
 
+# ─────────────────────────────────────────────
+# OpenEnv typed models
+# ─────────────────────────────────────────────
+
 @dataclass
 class TriageAction(Action):
     """What the agent submits as its triage decision."""
@@ -23,7 +32,7 @@ class TriageAction(Action):
     labels: List[str]        # e.g. ["bug", "performance"]
     assigned_team: str       # e.g. "backend", "frontend", "infra", "security"
     milestone: str           # e.g. "v2.1", "backlog", "hotfix"
-    reasoning: str           # brief explanation (rewarded for quality in hard task)
+    reasoning: str           # brief explanation
 
 
 @dataclass
@@ -37,7 +46,11 @@ class TriageObservation(Observation):
     reward: float
 
 
-@dataclass
+# ─────────────────────────────────────────────
+# TriageState — Pydantic model (NOT dataclass)
+# State base class from openenv is Pydantic
+# ─────────────────────────────────────────────
+
 class TriageState(State):
     """Internal episode state."""
     episode_id: str = ""
@@ -45,3 +58,6 @@ class TriageState(State):
     step_count: int = 0
     total_score: float = 0.0
     tasks_completed: List[str] = Field(default_factory=list)
+
+    class Config:
+        arbitrary_types_allowed = True
