@@ -25,43 +25,41 @@ actual engineering judgment.
 
 ## Action space
 
-| Field           | Type        | Values                                      |
-|-----------------|-------------|---------------------------------------------|
-| `priority`      | string      | `P0` `P1` `P2` `P3`                         |
-| `labels`        | list[str]   | `bug` `performance` `security` `ux` `docs`… |
-| `assigned_team` | string      | `backend` `frontend` `infra` `security` `devx` |
-| `milestone`     | string      | `hotfix` `v2.1` `backlog`                   |
-| `reasoning`     | string      | Free-form explanation                       |
+| Field | Type | Values |
+|---|---|---|
+| `priority` | string | `P0` `P1` `P2` `P3` |
+| `labels` | list[str] | `bug` `performance` `security` `ux` `docs`… |
+| `assigned_team` | string | `backend` `frontend` `infra` `security` `devx` |
+| `milestone` | string | `hotfix` `v2.1` `backlog` |
+| `reasoning` | string | Free-form explanation |
 
 ## Observation space
 
-| Field        | Type        | Description                              |
-|--------------|-------------|------------------------------------------|
-| `bug_report` | BugReport   | Title, body, author, comments            |
-| `task_id`    | string      | Current difficulty: easy / medium / hard |
-| `score`      | float       | Cumulative score this episode            |
-| `reward`     | float       | Reward from last action (0.0–1.0)        |
-| `feedback`   | string      | Human-readable grader feedback           |
-| `done`       | bool        | Episode complete flag                    |
+| Field | Type | Description |
+|---|---|---|
+| `bug_report` | BugReport | Title, body, author, comments |
+| `task_id` | string | Current difficulty: easy / medium / hard |
+| `score` | float | Cumulative score this episode |
+| `reward` | float | Reward from last action (0.0–1.0) |
+| `feedback` | string | Human-readable grader feedback |
+| `done` | bool | Episode complete flag |
 
 ## Tasks
 
 ### Task 1 — Easy (Priority labeling)
 Agent assigns a single P0–P3 priority to a bug report.
 - Grader: exact match = 1.0, one level off = 0.5, else 0.0
-- Expected baseline score: ~0.75
+- Grader weight: priority 100%
 
 ### Task 2 — Medium (Priority + label classification)
-Agent assigns priority AND a set of category labels.
-- Grader: 50% priority score + 50% Jaccard label similarity
-- Expected baseline score: ~0.60
+Agent assigns priority AND a set of category labels AND team routing.
+- Grader: priority 45% + label Jaccard similarity 40% + team routing 15%
 
 ### Task 3 — Hard (Full triage)
 Agent must assign priority, labels, team, and milestone.
 Security escalation failures are penalized.
-- Grader: 40% priority + 35% labels + 25% team routing
+- Grader: priority 35% + labels 30% + team 20% + milestone 15%
 - Penalty: −0.15 for missing security escalation
-- Expected baseline score: ~0.45
 
 ## Reward function
 
@@ -87,25 +85,37 @@ docker build -t bug-triage-env .
 docker run -p 7860:7860 bug-triage-env
 ```
 
-### Run baseline
+### Run inference (hackathon submission script)
 ```bash
-pip install groq openenv-core websockets
+pip install openai openenv-core
+export API_BASE_URL=https://router.huggingface.co/v1
+export MODEL_NAME=meta-llama/Llama-3.3-70B-Instruct
+export HF_TOKEN=your_hf_token_here
+export ENV_BASE_URL=https://siteshcodes-bug-triage-env.hf.space
+python inference.py
+```
+
+### Run baseline (development script)
+```bash
+pip install groq openenv-core
 export GROQ_API_KEY=your_key_here
 python baseline.py
 ```
-
 Get a free Groq API key at [console.groq.com](https://console.groq.com).
 
 ## Baseline scores
 
-Evaluated with `llama-3.3-70b-versatile` via Groq (temperature=0):
+Evaluated with `meta-llama/Llama-3.3-70B-Instruct` via HuggingFace router
+(temperature=0):
 
-| Task   | Score |
-|--------|-------|
-| Easy   | ~0.75 |
-| Medium | ~0.60 |
-| Hard   | ~0.45 |
-| **Avg**| **~0.60** |
+| Task | Score |
+|---|---|
+| Easy | 0.000 |
+| Medium | 0.000 |
+| Hard | 0.500 |
+| **Avg** | **0.167** |
+
+> Scores vary per run due to random bug sampling from a pool of 5 bugs per task.
 
 ## Project structure
 ```
@@ -117,7 +127,8 @@ bug-triage-env/
 │   └── requirements.txt
 ├── model.py             # Dataclass models
 ├── client.py            # WebSocket client
-├── baseline.py          # Groq inference script
+├── baseline.py          # Groq development script
+├── inference.py         # OpenAI client submission script
 ├── openenv.yaml         # OpenEnv spec metadata
 ├── Dockerfile
 └── README.md
