@@ -1,55 +1,55 @@
 # model.py
-from dataclasses import dataclass, field
-from typing import List, Optional
-from pydantic import Field
+from typing import List
+from pydantic import BaseModel, Field
 from openenv.core.env_server import Action, Observation
 from openenv.core.env_server.types import State
 
 
 # ─────────────────────────────────────────────
-# BugReport — plain dataclass (not an OpenEnv type)
+# BugReport — plain Pydantic model
 # ─────────────────────────────────────────────
 
-@dataclass
-class BugReport:
+class BugReport(BaseModel):
     """A single GitHub-style bug report."""
     id: str
     title: str
     body: str
     author: str
-    labels_hint: List[str]   # existing labels on the issue (may be empty)
-    comments: List[str]      # top comments for context
+    labels_hint: List[str] = Field(default_factory=list)
+    comments: List[str] = Field(default_factory=list)
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 # ─────────────────────────────────────────────
-# OpenEnv typed models
+# OpenEnv typed models — ALL pure Pydantic
 # ─────────────────────────────────────────────
 
-@dataclass
 class TriageAction(Action):
     """What the agent submits as its triage decision."""
     priority: str            # "P0" | "P1" | "P2" | "P3"
-    labels: List[str]        # e.g. ["bug", "performance"]
-    assigned_team: str       # e.g. "backend", "frontend", "infra", "security"
-    milestone: str           # e.g. "v2.1", "backlog", "hotfix"
-    reasoning: str           # brief explanation
+    labels: List[str] = Field(default_factory=list)
+    assigned_team: str = "backend"
+    milestone: str = "backlog"
+    reasoning: str = ""
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
-@dataclass
 class TriageObservation(Observation):
     """What the agent sees after each step."""
     bug_report: BugReport
-    task_id: str             # "easy" | "medium" | "hard"
-    score: float             # cumulative score so far (0.0–1.0)
-    feedback: str            # human-readable feedback on last action
-    done: bool
-    reward: float
+    task_id: str = "easy"
+    score: float = 0.0
+    feedback: str = ""
+    done: bool = False
+    reward: float = 0.0
 
+    class Config:
+        arbitrary_types_allowed = True
 
-# ─────────────────────────────────────────────
-# TriageState — Pydantic model (NOT dataclass)
-# State base class from openenv is Pydantic
-# ─────────────────────────────────────────────
 
 class TriageState(State):
     """Internal episode state."""
