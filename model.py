@@ -40,6 +40,7 @@ class TriageObservation(Observation):
 @dataclass
 class TriageState(State):
     """Internal episode state."""
+    episode_id: str = ""
     current_task: str = "easy"
     step_count: int = 0
     total_score: float = 0.0
