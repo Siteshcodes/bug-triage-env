@@ -3,4 +3,4 @@ fastapi
 uvicorn[standard]
 pydantic
 websockets
-groq
+groqiikik
