@@ -14,7 +14,9 @@ app = create_app(
     TriageObservation,
     env_name="bug-triage-env",
 )
-
+@app.get("/")
+def root():
+    return {"status": "ok", "env": "bug-triage-env"}
 def main():
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=7860)
