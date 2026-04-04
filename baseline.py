@@ -7,6 +7,7 @@ import json
 from groq import Groq
 from client import BugTriageClient
 from model import TriageAction
+import time
 
 # ── config ─────────────────────────────────────────────────
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -90,8 +91,9 @@ def main():
 
     with BugTriageClient() as env:
         obs = env.reset()
-
-        while not obs.done:
+        MAX_STEPS = 3
+        step_count = 0
+        while not obs.done and step_count < MAX_STEPS:
             task = obs.task_id
             print(f"\n── Task: {task.upper()} ──")
             print(f"  Bug: {obs.bug_report.title}")
@@ -112,6 +114,7 @@ def main():
 
             scores[task] = result.reward
             step_count += 1
+            time.sleep(2)
 
     print("\n" + "=" * 50)
     print("  BASELINE SCORES")
