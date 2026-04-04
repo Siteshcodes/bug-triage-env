@@ -28,7 +28,13 @@ class BugTriageEnvironment(Environment):
     """
 
     def __init__(self):
-        self._state = TriageState(episode_id=str(uuid.uuid4()))
+        self._state = TriageState(
+            episode_id=str(uuid.uuid4()),
+            current_task="easy",
+            step_count=0,
+            total_score=0.0,
+            tasks_completed=[],
+    )
         self._current_bug: Optional[BugReport] = None
         self._current_task_key: str = "easy"
         self._episode_done: bool = False
@@ -39,7 +45,13 @@ class BugTriageEnvironment(Environment):
 
     def reset(self) -> TriageObservation:
         """Start a fresh episode. Picks a random bug from the easy pool."""
-        self._state = TriageState(episode_id=str(uuid.uuid4()))
+        self._state = TriageState(
+           episode_id=str(uuid.uuid4()),
+           current_task="easy",
+           step_count=0,
+           total_score=0.0,
+           tasks_completed=[],
+    )
         self._current_task_key = "easy"
         self._episode_done = False
         self._current_bug = sample_bug("easy")
