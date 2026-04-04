@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 from openenv.core.env_server import Action, Observation
 from openenv.core.env_server.types import State
-
+from pydantic import Field
 
 @dataclass
 class BugReport:
@@ -44,4 +44,4 @@ class TriageState(State):
     current_task: str = "easy"
     step_count: int = 0
     total_score: float = 0.0
-    tasks_completed: List[str] = field(default_factory=list)
+    tasks_completed: List[str] = Field(default_factory=list)
