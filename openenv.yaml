@@ -4,8 +4,13 @@ description: >
   A reinforcement learning environment where an agent triages
   GitHub-style bug reports by assigning priority, labels, team,
   and milestone. 3 tasks of increasing difficulty (easy → medium → hard).
+endpoint: https://siteshcodes-bug-triage-env.hf.space
 tags:
   - openenv
   - bug-triage
   - real-world
   - nlp
+tasks:
+  - easy
+  - medium
+  - hard
