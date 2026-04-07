@@ -1,5 +1,9 @@
+spec_version: 1
 name: bug-triage-env
-version: "1.0.0"
+type: http
+runtime: docker
+app: server/app.py
+port: 7860
 description: >
   A reinforcement learning environment where an agent triages
   GitHub-style bug reports by assigning priority, labels, team,
