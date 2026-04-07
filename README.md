@@ -110,10 +110,10 @@ Evaluated with `meta-llama/Llama-3.3-70B-Instruct` via HuggingFace router
 
 | Task | Score |
 |---|---|
-| Easy | 0.000 |
-| Medium | 0.000 |
-| Hard | 0.500 |
-| **Avg** | **0.167** |
+| Easy | 1.000 |
+| Medium | 0.500 |
+| Hard | 1.000 |
+| **Avg** | **0.833** |
 
 > Scores vary per run due to random bug sampling from a pool of 5 bugs per task.
 
