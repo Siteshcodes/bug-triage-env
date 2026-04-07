@@ -11,6 +11,15 @@ tags:
   - real-world
   - nlp
 tasks:
-  - easy
-  - medium
-  - hard
+  - id: easy
+    description: Assign a single P0-P3 priority to a bug report
+    grader: priority_match
+    reward_range: [0.0, 1.0]
+  - id: medium
+    description: Assign priority, labels, and team routing
+    grader: priority_label_team
+    reward_range: [0.0, 1.0]
+  - id: hard
+    description: Full triage - priority, labels, team, milestone with security penalty
+    grader: full_triage
+    reward_range: [0.0, 1.0]
