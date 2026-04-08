@@ -334,3 +334,43 @@ def grade_action(
             feedback_parts.append("⚠ Security escalation missed (-0.15)")
 
         return round(score, 3), " | ".join(feedback_parts)
+    
+def priority_match(*args, **kwargs):
+    if len(args) < 2:
+        return 0.0
+
+    bug = args[0]
+    action = args[1]
+
+    score, _ = grade_action("easy", bug, action)
+    return float(score)
+
+
+def priority_label_team(*args, **kwargs):
+    if len(args) < 2:
+        return 0.0
+
+    bug = args[0]
+    action = args[1]
+
+    score, _ = grade_action("medium", bug, action)
+    return float(score)
+
+
+def full_triage(*args, **kwargs):
+    if len(args) < 2:
+        return 0.0
+
+    bug = args[0]
+    action = args[1]
+
+    score, _ = grade_action("hard", bug, action)
+    return float(score)
+__all__ = [
+    "priority_match",
+    "priority_label_team",
+    "full_triage",
+    "sample_bug",
+    "grade_action",
+    "TASKS", 
+]
