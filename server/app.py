@@ -6,7 +6,7 @@ sys.path.insert(0, "/app/server")
 from openenv.core.env_server import create_app
 from model import TriageAction, TriageObservation
 from environment import BugTriageEnvironment
-from task import sample_bug
+from task import sample_bug, grade_action, TASKS
 
 app = create_app(
     BugTriageEnvironment,
@@ -70,6 +70,28 @@ def reset_medium():
 def reset_hard():
     bug = sample_bug("hard")
     return {"task_id": "hard", "bug_report": bug.dict(), "done": False, "reward": 0.0}
+
+@app.post("/grader")
+def grader_endpoint(task_id: str, action: TriageAction):
+    bug = sample_bug(task_id)
+    score, feedback = grade_action(task_id, bug, action)
+    return {"task_id": task_id, "score": score, "feedback": feedback}
+
+@app.get("/baseline")
+def baseline():
+    results = {}
+    for task_id in ["easy", "medium", "hard"]:
+        bug = sample_bug(task_id)
+        answer = TASKS[task_id]["answers"][bug.id]
+        action = TriageAction(
+            priority=answer["priority"],
+            labels=answer.get("labels", []),
+            assigned_team=answer.get("assigned_team", ""),
+            milestone=answer.get("milestone", ""),
+        )
+        score, feedback = grade_action(task_id, bug, action)
+        results[task_id] = {"score": score, "feedback": feedback}
+    return results
 
 def main():
     import uvicorn
