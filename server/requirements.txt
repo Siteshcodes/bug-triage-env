@@ -3,4 +3,5 @@ fastapi
 uvicorn[standard]
 pydantic
 websockets
-groq
+openai
+httpx
