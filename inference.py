@@ -106,39 +106,29 @@ def format_bug(obs) -> str:
 
 
 def call_model(client: OpenAI, bug_text: str) -> TriageAction:
-    try:
-        completion = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user",   "content": bug_text},
-            ],
-            temperature=TEMPERATURE,
-            max_tokens=MAX_TOKENS,
-            stream=False,
-        )
-        raw = (completion.choices[0].message.content or "").strip()
-        if raw.startswith("```"):
-            raw = raw.split("```")[1]
-            if raw.startswith("json"):
-                raw = raw[4:]
-        data = json.loads(raw)
-        return TriageAction(
-            priority=data.get("priority", "P2"),
-            labels=data.get("labels", ["bug"]),
-            assigned_team=data.get("assigned_team", "backend"),
-            milestone=data.get("milestone", "backlog"),
-            reasoning=data.get("reasoning", ""),
-        )
-    except Exception as exc:
-        print(f"[DEBUG] model call failed: {exc}", flush=True)
-        return TriageAction(
-            priority="P2",
-            labels=["bug"],
-            assigned_team="backend",
-            milestone="backlog",
-            reasoning="fallback due to model error",
-        )
+    completion = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user",   "content": bug_text},
+        ],
+        temperature=TEMPERATURE,
+        max_tokens=MAX_TOKENS,
+        stream=False,
+    )
+    raw = (completion.choices[0].message.content or "").strip()
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+    data = json.loads(raw)
+    return TriageAction(
+        priority=data.get("priority", "P2"),
+        labels=data.get("labels", ["bug"]),
+        assigned_team=data.get("assigned_team", "backend"),
+        milestone=data.get("milestone", "backlog"),
+        reasoning=data.get("reasoning", ""),
+    )
 
 
 # ── main ──────────────────────────────────────────────────────────────────
