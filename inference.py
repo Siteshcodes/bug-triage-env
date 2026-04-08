@@ -23,6 +23,7 @@ from model import TriageAction
 API_BASE_URL  = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME    = os.getenv("MODEL_NAME",   "meta-llama/Llama-3.3-70B-Instruct")
 API_KEY       = os.getenv("HF_TOKEN") 
+LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
 ENV_BASE_URL  = os.getenv("ENV_BASE_URL", "https://siteshcodes-bug-triage-env.hf.space")
 
 TASK_NAME     = "bug-triage"
