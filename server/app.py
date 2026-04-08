@@ -81,7 +81,7 @@ def root():
 
 @app.get("/tasks")
 def list_tasks():
-    return {"tasks": TASKS_META}
+    return TASKS_META
 
 @app.get("/tasks/easy")
 def task_easy():
