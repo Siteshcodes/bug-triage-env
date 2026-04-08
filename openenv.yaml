@@ -6,13 +6,16 @@ app: server.app:app
 
 tasks:
   - id: easy
-    grader: task:priority_match
+    description: Assign correct P0-P3 priority to a bug report
+    grader: server.task.priority_match
     reward_range: [0.0, 1.0]
 
   - id: medium
-    grader: task:priority_label_team
+    description: Assign correct priority, labels, and team routing
+    grader: server.task.priority_label_team
     reward_range: [0.0, 1.0]
 
   - id: hard
-    grader: task:full_triage
+    description: Full triage with priority, labels, team, milestone
+    grader: server.task.full_triage
     reward_range: [0.0, 1.0]
