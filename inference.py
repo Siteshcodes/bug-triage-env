@@ -188,7 +188,7 @@ def main() -> None:
             for step, task_id in enumerate(TASK_IDS, start=1):
                 log_task_start(task_id)
 
-                obs    = env.reset(task_id=task_id)
+                obs    = env.reset(task_id)
                 action = call_model(client, format_bug(obs))
                 result = env.step(action)
                 reward = float(result.reward or 0.0)
