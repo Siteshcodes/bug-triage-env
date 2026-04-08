@@ -9,7 +9,18 @@ from task import grade_action, sample_bug
 
 VALID_TASKS = ["easy", "medium", "hard"]
 
+TASKS_META = [
+    {"id": "easy", "grader": "priority_match", "reward_range": [0.0, 1.0],
+     "description": "Assign a single P0-P3 priority to a bug report"},
+    {"id": "medium", "grader": "priority_label_team", "reward_range": [0.0, 1.0],
+     "description": "Assign priority, labels, and team routing"},
+    {"id": "hard", "grader": "full_triage", "reward_range": [0.0, 1.0],
+     "description": "Full triage with security escalation penalty"},
+]
+
 class BugTriageEnvironment(Environment):
+
+    SUPPORTS_CONCURRENT_SESSIONS = True
 
     def __init__(self):
         self._current_task_key: str = "easy"
@@ -23,7 +34,26 @@ class BugTriageEnvironment(Environment):
             tasks_completed=[],
         )
 
-    def reset(self, task_id: str = "easy") -> TriageObservation:
+    def get_metadata(self):
+        try:
+            from openenv.core.env_server.types import EnvironmentMetadata
+            return EnvironmentMetadata(
+                name="bug-triage-env",
+                description="Bug triage RL environment with 3 tasks of increasing difficulty",
+                version="1.0.0",
+                author="Siteshcodes",
+                tasks=TASKS_META,
+            )
+        except Exception:
+            return {
+                "name": "bug-triage-env",
+                "description": "Bug triage RL environment with 3 tasks of increasing difficulty",
+                "version": "1.0.0",
+                "author": "Siteshcodes",
+                "tasks": TASKS_META,
+            }
+
+    def reset(self, task_id: str = "easy", seed: int = None, episode_id: str = None) -> TriageObservation:
         """Start a fresh episode for the specified task."""
         if task_id not in VALID_TASKS:
             task_id = "easy"
@@ -32,7 +62,7 @@ class BugTriageEnvironment(Environment):
         self._episode_done = False
         self._current_bug = sample_bug(task_id)
         self._state = TriageState(
-            episode_id=str(uuid.uuid4()),
+            episode_id=episode_id or str(uuid.uuid4()),
             current_task=task_id,
             step_count=0,
             total_score=0.0,
