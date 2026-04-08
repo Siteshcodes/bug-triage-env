@@ -1,8 +1,8 @@
 spec_version: 1
 name: bug-triage-env
-type: http
-runtime: docker
-app: server/app.py
+type: space
+runtime: fastapi
+app: server.app:app
 port: 7860
 description: >
   A reinforcement learning environment where an agent triages
