@@ -13,11 +13,12 @@ import os
 import json
 import time
 import textwrap
+import requests
 from typing import List, Optional
+from dataclasses import asdict
 
 from openai import OpenAI
-from bug_triage_client import BugTriageClient
-from model import TriageAction
+from model import TriageAction, TriageObservation, BugReport
 
 # ── config ───────────────────────────────────────────────────────────────
 
@@ -25,7 +26,6 @@ _raw_base_url = os.getenv("API_BASE_URL", "").strip()
 if not _raw_base_url:
     raise RuntimeError("API_BASE_URL is not set — validator must inject this")
 
-# LiteLLM strictly requires /v1 at the end of the base URL
 if not _raw_base_url.rstrip("/").endswith("/v1"):
     API_BASE_URL = _raw_base_url.rstrip("/") + "/v1"
 else:
@@ -52,6 +52,72 @@ print(f"[CONFIG] API_BASE_URL={API_BASE_URL}", flush=True)
 print(f"[CONFIG] MODEL_NAME={MODEL_NAME}", flush=True)
 print(f"[CONFIG] ENV_BASE_URL={ENV_BASE_URL}", flush=True)
 print(f"[CONFIG] API_KEY={'set' if API_KEY else 'MISSING'}", flush=True)
+
+# ── inlined client (avoids openenv-core import conflict) ──────────────────
+
+def _parse_observation(data: dict) -> TriageObservation:
+    bug = BugReport(**data["bug_report"])
+    return TriageObservation(
+        bug_report=bug,
+        task_id=data.get("task_id", "easy"),
+        score=data.get("score", 0.0),
+        feedback=data.get("feedback", ""),
+        done=data.get("done", False),
+        reward=data.get("reward", 0.0),
+    )
+
+
+class StepResult:
+    def __init__(self, observation: TriageObservation, reward: float, done: bool, info: dict):
+        self.observation = observation
+        self.reward = reward
+        self.done = done
+        self.info = info
+
+
+class BugTriageClient:
+    def __init__(self, base_url: Optional[str] = None):
+        self.base_url = (base_url or ENV_BASE_URL).rstrip("/")
+        self.session = requests.Session()
+        self.session.headers.update({"Content-Type": "application/json"})
+
+    def reset(self, task_id: str = "easy") -> TriageObservation:
+        print(f"[ENV] Resetting env for task={task_id}", flush=True)
+        response = self.session.post(
+            f"{self.base_url}/reset",
+            json={"task_id": task_id},
+            timeout=30,
+        )
+        response.raise_for_status()
+        data = response.json()
+        return _parse_observation(data.get("observation", data))
+
+    def step(self, action: TriageAction) -> StepResult:
+        print("[ENV] Sending step action...", flush=True)
+        response = self.session.post(
+            f"{self.base_url}/step",
+            json={"action": asdict(action)},
+            timeout=30,
+        )
+        response.raise_for_status()
+        data = response.json()
+        obs = _parse_observation(data.get("observation", data))
+        return StepResult(
+            observation=obs,
+            reward=data.get("reward", obs.reward) or 0.0,
+            done=data.get("done", obs.done),
+            info={},
+        )
+
+    def close(self):
+        self.session.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
 
 # ── prompt ────────────────────────────────────────────────────────────────
 
@@ -120,7 +186,7 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
 
 # ── helpers ───────────────────────────────────────────────────────────────
 
-def format_bug(obs) -> str:
+def format_bug(obs: TriageObservation) -> str:
     bug = obs.bug_report
     comments = "\n".join(f"  - {c}" for c in bug.comments) if bug.comments else "  None"
     return (
@@ -148,7 +214,6 @@ def call_model(client: OpenAI, bug_text: str) -> TriageAction:
     raw = (completion.choices[0].message.content or "").strip()
     print(f"[LLM] Raw response: {raw[:200]}", flush=True)
 
-    # Strip markdown fences if model ignores instructions
     if raw.startswith("```"):
         parts = raw.split("```")
         raw = parts[1] if len(parts) > 1 else raw
@@ -216,7 +281,7 @@ def main() -> None:
         print(f"[ERROR] Exception during run: {type(exc).__name__}: {exc}", flush=True)
         score   = sum(rewards) / len(TASK_IDS) if rewards else 0.0
         success = False
-        raise exc  # CRITICAL: never fail silently — let validator see real error
+        raise exc
 
     finally:
         log_end(success, len(rewards), score, rewards)
