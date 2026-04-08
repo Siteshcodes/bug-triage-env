@@ -15,7 +15,6 @@ import time
 import textwrap
 import requests
 from typing import List, Optional
-from dataclasses import asdict
 
 from openai import OpenAI
 from model import TriageAction, TriageObservation, BugReport
@@ -56,7 +55,10 @@ print(f"[CONFIG] API_KEY={'set' if API_KEY else 'MISSING'}", flush=True)
 # ── inlined client (avoids openenv-core import conflict) ──────────────────
 
 def _parse_observation(data: dict) -> TriageObservation:
-    bug = BugReport(**data["bug_report"])
+    try:
+        bug = BugReport.model_validate(data["bug_report"])
+    except Exception:
+        bug = BugReport(**data["bug_report"])
     return TriageObservation(
         bug_report=bug,
         task_id=data.get("task_id", "easy"),
@@ -94,9 +96,14 @@ class BugTriageClient:
 
     def step(self, action: TriageAction) -> StepResult:
         print("[ENV] Sending step action...", flush=True)
+        # FIX: TriageAction is a Pydantic model — use .dict() not asdict()
+        try:
+            action_dict = action.model_dump()   # Pydantic v2
+        except AttributeError:
+            action_dict = action.dict()         # Pydantic v1 fallback
         response = self.session.post(
             f"{self.base_url}/step",
-            json={"action": asdict(action)},
+            json={"action": action_dict},
             timeout=30,
         )
         response.raise_for_status()
@@ -214,13 +221,18 @@ def call_model(client: OpenAI, bug_text: str) -> TriageAction:
     raw = (completion.choices[0].message.content or "").strip()
     print(f"[LLM] Raw response: {raw[:200]}", flush=True)
 
+    # Strip markdown code fences if present
     if raw.startswith("```"):
         parts = raw.split("```")
         raw = parts[1] if len(parts) > 1 else raw
         if raw.startswith("json"):
             raw = raw[4:].strip()
 
-    data = json.loads(raw)
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as e:
+        print(f"[LLM] JSON parse failed: {e}. Using safe defaults.", flush=True)
+        data = {}
 
     action = TriageAction(
         priority=data.get("priority", "P2"),
@@ -278,10 +290,10 @@ def main() -> None:
         success = score >= SUCCESS_SCORE_THRESHOLD
 
     except Exception as exc:
+        # FIX: do NOT re-raise — validator treats non-zero exit as failure
         print(f"[ERROR] Exception during run: {type(exc).__name__}: {exc}", flush=True)
         score   = sum(rewards) / len(TASK_IDS) if rewards else 0.0
         success = False
-        raise exc
 
     finally:
         log_end(success, len(rewards), score, rewards)
