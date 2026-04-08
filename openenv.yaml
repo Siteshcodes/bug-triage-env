@@ -16,10 +16,12 @@ tasks:
     description: Assign priority
     grader: server.task:priority_match
     reward_range: [0.0, 1.0]
+
   - id: medium
     description: Assign priority, labels, team
     grader: server.task:priority_label_team
     reward_range: [0.0, 1.0]
+
   - id: hard
     description: Full triage
     grader: server.task:full_triage
