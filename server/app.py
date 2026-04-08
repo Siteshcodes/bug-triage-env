@@ -19,61 +19,11 @@ app = create_app(
     env_name="bug-triage-env",
 )
 
-# Remove /metadata and /reset routes registered by create_app so we can override them
-app.routes[:] = [
-    r for r in app.routes
-    if not (hasattr(r, "path") and r.path in ["/metadata", "/reset"])
-]
-
 TASKS_META = [
-    {
-        "id": "easy",
-        "description": "Assign a single P0-P3 priority to a bug report",
-        "grader": "task.priority_match",
-        "reward_range": [0.0, 1.0]
-    },
-    {
-        "id": "medium",
-        "description": "Assign priority, labels, and team routing",
-        "grader": "task.priority_label_team",
-        "reward_range": [0.0, 1.0]
-    },
-    {
-        "id": "hard",
-        "description": "Full triage with security escalation penalty",
-        "grader": "task.full_triage",
-        "reward_range": [0.0, 1.0]
-    }
+    {"id": "easy", "description": "Assign a single P0-P3 priority to a bug report", "grader": "priority_match", "reward_range": [0.0, 1.0]},
+    {"id": "medium", "description": "Assign priority, labels, and team routing", "grader": "priority_label_team", "reward_range": [0.0, 1.0]},
+    {"id": "hard", "description": "Full triage with security escalation penalty", "grader": "full_triage", "reward_range": [0.0, 1.0]}
 ]
-
-class ResetRequest(BaseModel):
-    task_id: str = "easy"
-    seed: Optional[int] = None
-    episode_id: Optional[str] = None
-
-@app.get("/metadata")
-def metadata():
-    return Response(
-        content=json.dumps({
-            "name": "bug-triage-env",
-            "description": "Bug triage RL environment with 3 tasks of increasing difficulty",
-            "readme_content": None,
-            "version": "1.0.0",
-            "author": "Siteshcodes",
-            "documentation_url": "https://siteshcodes-bug-triage-env.hf.space/docs",
-            "tasks": TASKS_META
-        }),
-        media_type="application/json"
-    )
-
-@app.post("/reset")
-def reset(request: ResetRequest = None):
-    task_id = request.task_id if request else "easy"
-    if task_id not in ["easy", "medium", "hard"]:
-        task_id = "easy"
-    env = BugTriageEnvironment()
-    obs = env.reset(task_id=task_id)
-    return obs
 
 @app.get("/")
 def root():
@@ -109,28 +59,6 @@ def reset_medium():
 def reset_hard():
     bug = sample_bug("hard")
     return {"task_id": "hard", "bug_report": bug.dict(), "done": False, "reward": 0.0}
-
-@app.post("/grader")
-def grader_endpoint(task_id: str, action: TriageAction):
-    bug = sample_bug(task_id)
-    score, feedback = grade_action(task_id, bug, action)
-    return {"task_id": task_id, "score": score, "feedback": feedback}
-
-@app.get("/baseline")
-def baseline():
-    results = {}
-    for task_id in ["easy", "medium", "hard"]:
-        bug = sample_bug(task_id)
-        answer = TASKS[task_id]["answers"][bug.id]
-        action = TriageAction(
-            priority=answer["priority"],
-            labels=answer.get("labels", []),
-            assigned_team=answer.get("assigned_team", ""),
-            milestone=answer.get("milestone", ""),
-        )
-        score, feedback = grade_action(task_id, bug, action)
-        results[task_id] = {"score": score, "feedback": feedback}
-    return results
 
 def main():
     import uvicorn
