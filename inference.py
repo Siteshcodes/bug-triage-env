@@ -179,7 +179,7 @@ def log_step(
 
 
 def log_task_end(task_id: str, reward: float) -> None:
-    print(f"[TASK_END] task={task_id} reward={reward:.3f}", flush=True)
+    print(f"Task {task_id} completed. Final Reward: {reward:.3f}", flush=True)
 
 
 def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
@@ -265,7 +265,7 @@ def main() -> None:
             for step, task_id in enumerate(TASK_IDS, start=1):
                 log_task_start(task_id)
 
-                obs    = env.reset(task_id)
+                obs = env.reset(task_id=task_id)
                 action = call_model(client, format_bug(obs))
                 result = env.step(action)
                 reward = float(result.reward or 0.0)
