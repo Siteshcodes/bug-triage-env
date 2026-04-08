@@ -9,6 +9,8 @@ from model import TriageAction, TriageObservation
 from environment import BugTriageEnvironment
 from task import sample_bug, grade_action, TASKS
 from fastapi import Response
+from pydantic import BaseModel
+from typing import Optional
 
 app = create_app(
     BugTriageEnvironment,
@@ -17,8 +19,11 @@ app = create_app(
     env_name="bug-triage-env",
 )
 
-# ── Remove the /metadata route registered by create_app so we can override it
-app.routes[:] = [r for r in app.routes if not (hasattr(r, "path") and r.path == "/metadata")]
+# Remove /metadata and /reset routes registered by create_app so we can override them
+app.routes[:] = [
+    r for r in app.routes
+    if not (hasattr(r, "path") and r.path in ["/metadata", "/reset"])
+]
 
 TASKS_META = [
     {
@@ -41,6 +46,11 @@ TASKS_META = [
     }
 ]
 
+class ResetRequest(BaseModel):
+    task_id: str = "easy"
+    seed: Optional[int] = None
+    episode_id: Optional[str] = None
+
 @app.get("/metadata")
 def metadata():
     return Response(
@@ -55,6 +65,15 @@ def metadata():
         }),
         media_type="application/json"
     )
+
+@app.post("/reset")
+def reset(request: ResetRequest = None):
+    task_id = request.task_id if request else "easy"
+    if task_id not in ["easy", "medium", "hard"]:
+        task_id = "easy"
+    env = BugTriageEnvironment()
+    obs = env.reset(task_id=task_id)
+    return obs
 
 @app.get("/")
 def root():
