@@ -36,6 +36,17 @@ TASKS_META = [
     }
 ]
 
+@app.get("/metadata")
+def metadata():
+    return {
+        "name": "bug-triage-env",
+        "description": "Bug triage RL environment with 3 tasks of increasing difficulty",
+        "version": "1.0.0",
+        "author": "Siteshcodes",
+        "documentation_url": "https://siteshcodes-bug-triage-env.hf.space/docs",
+        "tasks": TASKS_META
+    }
+
 @app.get("/")
 def root():
     return {"status": "ok", "env": "bug-triage-env"}
