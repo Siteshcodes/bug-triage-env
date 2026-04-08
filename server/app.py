@@ -20,9 +20,24 @@ app = create_app(
 )
 
 TASKS_META = [
-    {"id": "easy", "description": "Assign a single P0-P3 priority to a bug report", "grader": "priority_match", "reward_range": [0.0, 1.0]},
-    {"id": "medium", "description": "Assign priority, labels, and team routing", "grader": "priority_label_team", "reward_range": [0.0, 1.0]},
-    {"id": "hard", "description": "Full triage with security escalation penalty", "grader": "full_triage", "reward_range": [0.0, 1.0]}
+    {
+        "id": "easy",
+        "description": "...",
+        "grader": "server.task.priority_match",
+        "reward_range": [0.0, 1.0]
+    },
+    {
+        "id": "medium",
+        "description": "...",
+        "grader": "server.task.priority_label_team",
+        "reward_range": [0.0, 1.0]
+    },
+    {
+        "id": "hard",
+        "description": "...",
+        "grader": "server.task.full_triage",
+        "reward_range": [0.0, 1.0]
+    }
 ]
 
 @app.get("/")
