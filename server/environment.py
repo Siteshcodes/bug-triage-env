@@ -53,7 +53,7 @@ class BugTriageEnvironment(Environment):
                 "tasks": TASKS_META,
             }
 
-    def reset(self, task_id: str = "easy", seed: int = None, episode_id: str = None) -> TriageObservation:
+    def reset(self, task_id: str = "easy", seed: int = None, episode_id: str = None, **kwargs) -> TriageObservation:
         """Start a fresh episode for the specified task."""
         if task_id not in VALID_TASKS:
             task_id = "easy"
