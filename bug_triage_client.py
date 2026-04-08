@@ -43,8 +43,11 @@ class BugTriageClient:
         return _parse_observation(obs_data)
 
     def step(self, action: TriageAction) -> StepResult:
-        from dataclasses import asdict
-        payload = {"action": action.dict()}
+        try:
+            action_dict = action.model_dump()
+        except AttributeError:
+            action_dict = action.dict()
+        payload = {"action": action_dict}
         response = self.session.post(f"{self.base_url}/step", json=payload, timeout=30)
         response.raise_for_status()
         data = response.json()
