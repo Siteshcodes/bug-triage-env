@@ -15,16 +15,16 @@ tags:
 tasks:
   - id: easy
     description: "Assign correct P0-P3 priority to a bug report"
-    grader: server.task.priority_match
+    grader: task.priority_match
     reward_range: [0.0, 1.0]
 
   - id: medium
     description: "Assign correct priority, labels, and team routing"
-    grader: server.task.priority_label_team
+    grader: task.priority_label_team
     reward_range: [0.0, 1.0]
 
   - id: hard
     description: "Full triage with priority, labels, team, milestone"
-    grader: server.task.full_triage
+    grader: task.full_triage
     reward_range: [0.0, 1.0]
-    
+

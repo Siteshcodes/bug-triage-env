@@ -29,19 +29,19 @@ TASKS_META = [
     {
         "id": "easy",
         "description": "Assign a single P0-P3 priority to a bug report",
-        "grader": "priority_match",
+        "grader": "task.priority_match",
         "reward_range": [0.0, 1.0]
     },
     {
         "id": "medium",
         "description": "Assign priority, labels, and team routing",
-        "grader": "priority_label_team",
+        "grader": "task.priority_label_team",
         "reward_range": [0.0, 1.0]
     },
     {
         "id": "hard",
         "description": "Full triage with security escalation penalty",
-        "grader": "full_triage",
+        "grader": "task.full_triage",
         "reward_range": [0.0, 1.0]
     }
 ]
