@@ -16,7 +16,7 @@ import textwrap
 from typing import List, Optional
 
 from openai import OpenAI
-from client import BugTriageClient
+from bug_triage_client import BugTriageClient
 from model import TriageAction
 
 # ── config ───────────────────────────────────────────────────────────────
