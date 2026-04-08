@@ -19,10 +19,15 @@ from client import BugTriageClient
 from model import TriageAction
 
 # ── config ───────────────────────────────────────────────────────────────
-API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME   = os.getenv("MODEL_NAME",   "meta-llama/Llama-3.3-70B-Instruct")
-API_KEY      = os.getenv("HF_TOKEN")
+API_BASE_URL = os.getenv("API_BASE_URL")
+MODEL_NAME   = os.getenv("MODEL_NAME", "meta-llama/Llama-3.3-70B-Instruct")
+API_KEY      = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY")
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "https://siteshcodes-bug-triage-env.hf.space")
+
+if not API_BASE_URL:
+    raise RuntimeError("API_BASE_URL not set — must be provided by the evaluation proxy")
+if not API_KEY:
+    raise RuntimeError("HF_TOKEN or OPENAI_API_KEY not set")
 
 TASK_IDS                = ["easy", "medium", "hard"]
 BENCHMARK               = "bug-triage-env"
@@ -139,9 +144,6 @@ def call_model(client: OpenAI, bug_text: str) -> TriageAction:
 # ── main ──────────────────────────────────────────────────────────────────
 
 def main() -> None:
-    if not API_KEY:
-        raise RuntimeError("HF_TOKEN not set.")
-
     client  = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
     rewards: List[float] = []
     score   = 0.0
