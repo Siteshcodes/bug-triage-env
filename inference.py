@@ -136,44 +136,36 @@ def call_model(client: OpenAI, bug_text: str) -> TriageAction:
 # ── main ─────────────────────────────────────────────────────────────────
 
 def main() -> None:
+    if not API_KEY:
+        raise RuntimeError("Missing HF_TOKEN")
+
     client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
     rewards: List[float] = []
-    steps_taken = 0
-    score = 0.0
+    score = 0.0          
     success = False
+    steps_taken = 0
 
     log_start(task=TASK_NAME, env=BENCHMARK, model=MODEL_NAME)
 
     try:
         with BugTriageClient(base_url=ENV_BASE_URL) as env:
-            obs = env.reset()
-            step_count = 0
 
-            while not obs.done and step_count < MAX_STEPS:
-                step_count += 1
-                task = obs.task_id
+            task_order = ["easy", "medium", "hard"]
 
-                print(f"\n── Task: {task.upper()} ──", flush=True)
-                print(f"  Bug: {obs.bug_report.title}", flush=True)
+            for step_count, task_name in enumerate(task_order, start=1):
+
+                obs = env.reset()
 
                 bug_text = format_bug(obs)
                 action = call_model(client, bug_text)
 
-                print(f"  → Priority:  {action.priority}", flush=True)
-                print(f"  → Labels:    {action.labels}", flush=True)
-                print(f"  → Team:      {action.assigned_team}", flush=True)
-                print(f"  → Milestone: {action.milestone}", flush=True)
-
                 result = env.step(action)
-                obs = result.observation
 
-                reward = result.reward or 0.0
-                done = result.done
+                reward = float(result.reward or 0.0)
                 rewards.append(reward)
                 steps_taken = step_count
 
-                # action summary for [STEP] log
                 action_str = (
                     f"priority={action.priority},"
                     f"team={action.assigned_team},"
@@ -184,44 +176,22 @@ def main() -> None:
                     step=step_count,
                     action=action_str,
                     reward=reward,
-                    done=done,
+                    done=True,
                     error=None,
                 )
 
-                print(f"  ✓ Reward:    {reward:.3f}", flush=True)
-                print(f"  ✓ Feedback:  {obs.feedback}", flush=True)
+                time.sleep(0.5)
 
-                time.sleep(1)  # avoid rate limiting
-
-        # compute final score
-        score = sum(rewards) / MAX_STEPS if MAX_STEPS > 0 else 0.0
-        score = min(max(score, 0.0), 1.0)
+        score = sum(rewards) / 3 if rewards else 0.0
         success = score >= SUCCESS_SCORE_THRESHOLD
 
-        # print score table
-        task_order = ["easy", "medium", "hard"]
-        print("\n" + "=" * 50, flush=True)
-        print("  BASELINE SCORES", flush=True)
-        print("=" * 50, flush=True)
-        for i, task in enumerate(task_order):
-            r = rewards[i] if i < len(rewards) else 0.0
-            bar = "█" * int(r * 20) + "░" * (20 - int(r * 20))
-            print(f"  {task:<8} {bar}  {r:.3f}", flush=True)
-        print(f"\n  Average score: {score:.3f}", flush=True)
-        print("=" * 50, flush=True)
-
-    except Exception as exc:
-        print(f"[DEBUG] Episode error: {exc}", flush=True)
+    except Exception as e:
+        log_step(step=steps_taken + 1, action="none", reward=0.0, done=True, error=str(e))
+        score = 0.0
         success = False
 
     finally:
-        log_end(
-            success=success,
-            steps=steps_taken,
-            score=score,
-            rewards=rewards,
-        )
-
+        log_end(success, steps_taken, score, rewards)
 
 if __name__ == "__main__":
     main()
