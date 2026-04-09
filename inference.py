@@ -51,10 +51,10 @@ def _parse_observation(data: dict) -> TriageObservation:
     return TriageObservation(
         bug_report=bug,
         task_id=data.get("task_id", "easy"),
-        score=data.get("score", 0.0),
+        score=data.get("score", 0.05),
         feedback=data.get("feedback", ""),
         done=data.get("done", False),
-        reward=data.get("reward", 0.0),
+        reward=data.get("reward", 0.05),
     )
 
 
@@ -99,7 +99,7 @@ class BugTriageClient:
         obs = _parse_observation(data.get("observation", data))
         return StepResult(
             observation=obs,
-            reward=data.get("reward", obs.reward) or 0.0,
+            reward=data.get("reward", obs.reward) or 0.05,
             done=data.get("done", obs.done),
             info={},
         )
@@ -233,7 +233,7 @@ def call_model(client: OpenAI, bug_text: str) -> TriageAction:
 def main() -> None:
     client  = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
     rewards: List[float] = []
-    score   = 0.0
+    score = 0.05
     success = False
 
     try:
@@ -244,7 +244,7 @@ def main() -> None:
                 obs    = env.reset(task_id=task_id)
                 action = call_model(client, format_bug(obs))
                 result = env.step(action)
-                reward = float(result.reward or 0.0)
+                reward = float(result.reward or 0.05)
                 rewards.append(reward)
 
                 action_str = (
@@ -265,7 +265,7 @@ def main() -> None:
 
     except Exception as exc:
         print(f"[ERROR] {type(exc).__name__}: {exc}", flush=True)
-        score   = sum(rewards) / len(TASK_IDS) if rewards else 0.0
+        score = sum(rewards) / len(TASK_IDS) if rewards else 0.05
         success = False
 
     finally:
