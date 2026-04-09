@@ -63,18 +63,17 @@ def task_hard():
 @app.post("/tasks/easy/reset")
 def reset_easy():
     bug = sample_bug("easy")
-    return {"task_id": "easy", "bug_report": bug.dict(), "done": False, "reward": 0.0}
+    return {"task_id": "easy", "bug_report": bug.dict(), "done": False, "reward": 0.05}
 
 @app.post("/tasks/medium/reset")
 def reset_medium():
     bug = sample_bug("medium")
-    return {"task_id": "medium", "bug_report": bug.dict(), "done": False, "reward": 0.0}
+    return {"task_id": "medium", "bug_report": bug.dict(), "done": False, "reward": 0.05}
 
 @app.post("/tasks/hard/reset")
 def reset_hard():
     bug = sample_bug("hard")
-    return {"task_id": "hard", "bug_report": bug.dict(), "done": False, "reward": 0.0}
-
+    return {"task_id": "hard", "bug_report": bug.dict(), "done": False, "reward": 0.05}
 def main():
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=7860)

@@ -245,94 +245,60 @@ PRIORITY_ORDER = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
 
 
 def _priority_score(predicted: str, correct: str) -> float:
-    """Exact match = 1.0, one level off = 0.5, two+ off = 0.0"""
     if predicted == correct:
-        return 1.0
+        return 0.95
     diff = abs(PRIORITY_ORDER.get(predicted, 99) - PRIORITY_ORDER.get(correct, 99))
-    return 0.5 if diff == 1 else 0.0
+    return 0.5 if diff == 1 else 0.05
 
 
 def _label_score(predicted: List[str], correct: List[str]) -> float:
-    """Jaccard similarity between predicted and correct label sets."""
     pred_set = set(l.lower() for l in predicted)
     corr_set = set(l.lower() for l in correct)
     if not corr_set:
-        return 1.0
+        return 0.95
     intersection = pred_set & corr_set
     union = pred_set | corr_set
-    return len(intersection) / len(union)
+    raw = len(intersection) / len(union)
+    return max(0.05, min(0.95, raw))
 
 
-def grade_action(
-    task_key: str, bug: BugReport, action: TriageAction
-) -> Tuple[float, str]:
-    """
-    Returns (score: 0.0–1.0, feedback: str)
-
-    Easy   — priority only (100%)
-    Medium — priority (45%) + labels (40%) + team routing (15%)
-    Hard   — priority (35%) + labels (30%) + team (20%) + milestone (15%)
-             with -0.15 penalty for missing security escalation
-    """
+def grade_action(task_key, bug, action):
     answer = TASKS[task_key]["answers"][bug.id]
     feedback_parts = []
 
     if task_key == "easy":
-        # Only grade priority
         score = _priority_score(action.priority, answer["priority"])
-        symbol = "✓" if score == 1.0 else "~" if score == 0.5 else "✗"
-        feedback_parts.append(
-            f"Priority: {symbol} (got {action.priority}, expected {answer['priority']})"
-        )
+        symbol = "✓" if score >= 0.9 else "~" if score >= 0.4 else "✗"
+        feedback_parts.append(f"Priority: {symbol} (got {action.priority}, expected {answer['priority']})")
+        score = max(0.05, min(0.95, score))
         return round(score, 3), " | ".join(feedback_parts)
 
     elif task_key == "medium":
-        # Priority (45%) + labels (40%) + team routing (15%)
         p_score = _priority_score(action.priority, answer["priority"])
         l_score = _label_score(action.labels, answer["labels"])
-
         expected_team = answer.get("assigned_team", "")
-        t_score = (
-            1.0
-            if expected_team and action.assigned_team.lower() == expected_team.lower()
-            else 0.0
-        )
-
+        t_score = 0.95 if expected_team and action.assigned_team.lower() == expected_team.lower() else 0.05
         score = 0.45 * p_score + 0.40 * l_score + 0.15 * t_score
-
         feedback_parts.append(f"Priority: {p_score:.2f} (got {action.priority}, expected {answer['priority']})")
         feedback_parts.append(f"Labels: {l_score:.2f}")
         feedback_parts.append(f"Team: {t_score:.2f} (got {action.assigned_team}, expected {expected_team})")
-
+        score = max(0.05, min(0.95, score))
         return round(score, 3), " | ".join(feedback_parts)
 
     else:  # hard
-        # Priority (35%) + labels (30%) + team (20%) + milestone (15%)
         p_score = _priority_score(action.priority, answer["priority"])
         l_score = _label_score(action.labels, answer["labels"])
-        t_score = (
-            1.0
-            if action.assigned_team.lower() == answer["assigned_team"].lower()
-            else 0.0
-        )
-        m_score = (
-            1.0
-            if action.milestone.lower() == answer["milestone"].lower()
-            else 0.0
-        )
-
+        t_score = 0.95 if action.assigned_team.lower() == answer["assigned_team"].lower() else 0.05
+        m_score = 0.95 if action.milestone.lower() == answer["milestone"].lower() else 0.05
         score = 0.35 * p_score + 0.30 * l_score + 0.20 * t_score + 0.15 * m_score
-
         feedback_parts.append(f"Priority: {p_score:.2f} (got {action.priority}, expected {answer['priority']})")
         feedback_parts.append(f"Labels: {l_score:.2f}")
         feedback_parts.append(f"Team: {t_score:.2f} (got {action.assigned_team}, expected {answer['assigned_team']})")
         feedback_parts.append(f"Milestone: {m_score:.2f} (got {action.milestone}, expected {answer['milestone']})")
-
-        # Penalty: missing security escalation on security bugs
         if answer.get("assigned_team") == "security" and action.assigned_team.lower() != "security":
-            score = max(0.0, score - 0.15)
+            score = max(0.05, score - 0.15)
             feedback_parts.append("⚠ Security escalation missed (-0.15)")
-
+        score = max(0.05, min(0.95, score))
         return round(score, 3), " | ".join(feedback_parts)
     
 def priority_match(*args, **kwargs):
