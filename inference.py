@@ -4,7 +4,7 @@ OpenEnv Hackathon submission inference script.
 
 Required env vars:
     API_BASE_URL   LiteLLM proxy base URL (injected by validator)
-    API_KEY        API key (injected by validator)
+    HF_TOKEN       API key (injected by validator)
     ENV_BASE_URL   Bug Triage env URL (optional)
     MODEL_NAME     Model identifier (optional)
 """
@@ -15,31 +15,20 @@ import time
 import textwrap
 import requests
 from typing import List, Optional
+from dataclasses import asdict
 
 from openai import OpenAI
 from model import TriageAction, TriageObservation, BugReport
 
 # ── config ───────────────────────────────────────────────────────────────
 
-_raw_base_url = os.getenv("API_BASE_URL", "").strip()
-if not _raw_base_url:
-    raise RuntimeError("API_BASE_URL is not set — validator must inject this")
+API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
+API_KEY      = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY")
+MODEL_NAME   = os.getenv("MODEL_NAME") or "meta-llama/Llama-3.3-70B-Instruct"
+ENV_BASE_URL = os.getenv("ENV_BASE_URL") or "https://siteshcodes-bug-triage-env.hf.space"
 
-if not _raw_base_url.rstrip("/").endswith("/v1"):
-    API_BASE_URL = _raw_base_url.rstrip("/") + "/v1"
-else:
-    API_BASE_URL = _raw_base_url.rstrip("/")
-
-API_KEY = (
-    os.getenv("API_KEY")
-    or os.getenv("HF_TOKEN")
-    or os.getenv("OPENAI_API_KEY")
-)
 if not API_KEY:
-    raise RuntimeError("API_KEY is not set — validator must inject this")
-
-MODEL_NAME   = os.getenv("MODEL_NAME", "meta-llama/Llama-3.3-70B-Instruct")
-ENV_BASE_URL = os.getenv("ENV_BASE_URL", "https://siteshcodes-bug-triage-env.hf.space")
+    raise RuntimeError("HF_TOKEN is not set")
 
 TASK_IDS                = ["easy", "medium", "hard"]
 BENCHMARK               = "bug-triage-env"
@@ -52,7 +41,7 @@ print(f"[CONFIG] MODEL_NAME={MODEL_NAME}", flush=True)
 print(f"[CONFIG] ENV_BASE_URL={ENV_BASE_URL}", flush=True)
 print(f"[CONFIG] API_KEY={'set' if API_KEY else 'MISSING'}", flush=True)
 
-# ── inlined client (avoids openenv-core import conflict) ──────────────────
+# ── inlined client ────────────────────────────────────────────────────────
 
 def _parse_observation(data: dict) -> TriageObservation:
     try:
@@ -96,11 +85,10 @@ class BugTriageClient:
 
     def step(self, action: TriageAction) -> StepResult:
         print("[ENV] Sending step action...", flush=True)
-        # FIX: TriageAction is a Pydantic model — use .dict() not asdict()
         try:
-            action_dict = action.model_dump()   # Pydantic v2
+            action_dict = action.model_dump()
         except AttributeError:
-            action_dict = action.dict()         # Pydantic v1 fallback
+            action_dict = action.dict()
         response = self.session.post(
             f"{self.base_url}/step",
             json={"action": action_dict},
@@ -155,38 +143,29 @@ SYSTEM_PROMPT = textwrap.dedent("""
 
 # ── logging ───────────────────────────────────────────────────────────────
 
-def log_start(env: str, model: str) -> None:
-    print(f"[START] env={env} model={model}", flush=True)
-
-
-def log_task_start(task_id: str) -> None:
-    print(f"\n--- Starting Task: {task_id} ---", flush=True)
+def log_start(task: str, env: str, model: str) -> None:
+    print(f"[START] task={task} env={env} model={model}", flush=True)
 
 
 def log_step(
     step: int,
-    task_id: str,
     action: str,
     reward: float,
     done: bool,
     error: Optional[str] = None,
 ) -> None:
     print(
-        f"[STEP] step={step} task={task_id} action={action} "
+        f"[STEP] step={step} action={action} "
         f"reward={reward:.2f} done={str(done).lower()} error={error or 'null'}",
         flush=True,
     )
-
-
-def log_task_end(task_id: str, reward: float) -> None:
-    print(f"Task {task_id} completed. Final Reward: {reward:.3f}", flush=True)
 
 
 def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
     print(
         f"[END] success={str(success).lower()} steps={steps} "
-        f"score={score:.3f} rewards={rewards_str}",
+        f"score={score:.2f} rewards={rewards_str}",
         flush=True,
     )
 
@@ -221,7 +200,6 @@ def call_model(client: OpenAI, bug_text: str) -> TriageAction:
     raw = (completion.choices[0].message.content or "").strip()
     print(f"[LLM] Raw response: {raw[:200]}", flush=True)
 
-    # Strip markdown code fences if present
     if raw.startswith("```"):
         parts = raw.split("```")
         raw = parts[1] if len(parts) > 1 else raw
@@ -231,7 +209,7 @@ def call_model(client: OpenAI, bug_text: str) -> TriageAction:
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as e:
-        print(f"[LLM] JSON parse failed: {e}. Using safe defaults.", flush=True)
+        print(f"[LLM] JSON parse failed: {e}. Using defaults.", flush=True)
         data = {}
 
     action = TriageAction(
@@ -243,7 +221,7 @@ def call_model(client: OpenAI, bug_text: str) -> TriageAction:
     )
 
     print(
-        f"[LLM] Parsed action: priority={action.priority} "
+        f"[LLM] Parsed: priority={action.priority} "
         f"team={action.assigned_team} milestone={action.milestone}",
         flush=True,
     )
@@ -258,14 +236,12 @@ def main() -> None:
     score   = 0.0
     success = False
 
-    log_start(env=BENCHMARK, model=MODEL_NAME)
-
     try:
         with BugTriageClient(base_url=ENV_BASE_URL) as env:
             for step, task_id in enumerate(TASK_IDS, start=1):
-                log_task_start(task_id)
+                log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
 
-                obs = env.reset(task_id=task_id)
+                obs    = env.reset(task_id=task_id)
                 action = call_model(client, format_bug(obs))
                 result = env.step(action)
                 reward = float(result.reward or 0.0)
@@ -278,20 +254,17 @@ def main() -> None:
                 )
                 log_step(
                     step=step,
-                    task_id=task_id,
                     action=action_str,
                     reward=reward,
                     done=True,
                 )
-                log_task_end(task_id, reward)
                 time.sleep(0.5)
 
         score   = sum(rewards) / len(TASK_IDS)
         success = score >= SUCCESS_SCORE_THRESHOLD
 
     except Exception as exc:
-        # FIX: do NOT re-raise — validator treats non-zero exit as failure
-        print(f"[ERROR] Exception during run: {type(exc).__name__}: {exc}", flush=True)
+        print(f"[ERROR] {type(exc).__name__}: {exc}", flush=True)
         score   = sum(rewards) / len(TASK_IDS) if rewards else 0.0
         success = False
 
