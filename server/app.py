@@ -22,21 +22,21 @@ app = create_app(
 TASKS_META = [
     {
         "id": "easy",
-        "description": "...",
-        "grader": "server.task.priority_match",
-        "reward_range": [0.0, 1.0]
+        "description": "Assign correct P0-P3 priority to a bug report",
+        "grader": "priority_match",
+        "reward_range": [0.05, 0.95]
     },
     {
         "id": "medium",
-        "description": "...",
-        "grader": "server.task.priority_label_team",
-        "reward_range": [0.0, 1.0]
+        "description": "Assign correct priority, labels, and team routing",
+        "grader": "priority_label_team",
+        "reward_range": [0.05, 0.95]
     },
     {
         "id": "hard",
-        "description": "...",
-        "grader": "server.task.full_triage",
-        "reward_range": [0.0, 1.0]
+        "description": "Full triage with priority, labels, team, milestone and security penalty",
+        "grader": "full_triage",
+        "reward_range": [0.05, 0.95]
     }
 ]
 
