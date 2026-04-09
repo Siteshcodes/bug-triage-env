@@ -34,7 +34,7 @@ Every software team triages dozens of bug reports weekly. Getting prioritization
 | `bug_report` | BugReport | Title, body, author, comments            |
 | `task_id`    | string    | Current difficulty: easy / medium / hard |
 | `score`      | float     | Cumulative score this episode            |
-| `reward`     | float     | Reward from last action (0.0–1.0)        |
+| `reward`     | float     | Reward from last action (0.05–0.95)      |
 | `feedback`   | string    | Human-readable grader feedback           |
 | `done`       | bool      | Episode complete flag                    |
 
@@ -42,25 +42,29 @@ Every software team triages dozens of bug reports weekly. Getting prioritization
 
 ### Task 1 — Easy (Priority labeling)
 Agent assigns a single P0–P3 priority to a bug report.
-- Grader: exact match = 1.0, one level off = 0.5, else 0.0
+- Grader: exact match = 0.95, one level off = 0.5, else 0.05
 - Grader weight: priority 100%
+- Reward range: 0.05–0.95
 
 ### Task 2 — Medium (Priority + labels + team)
 Agent assigns priority, category labels, and team routing.
 - Grader: priority 45% + label Jaccard similarity 40% + team routing 15%
+- Reward range: 0.05–0.95
 
 ### Task 3 — Hard (Full triage)
 Agent must assign priority, labels, team, and milestone. Security escalation failures are penalized.
 - Grader: priority 35% + labels 30% + team 20% + milestone 15%
 - Penalty: −0.15 for missing security escalation
+- Reward range: 0.05–0.95
 
 ## Reward function
 
 Rewards are provided at every step (not just end of episode):
-- Partial credit for close-but-not-exact priority (0.5 vs 0.0 vs 1.0)
+- Partial credit for close-but-not-exact priority (0.5 vs 0.05 vs 0.95)
 - Label overlap via Jaccard similarity (continuous signal)
 - Team routing accuracy (binary, but weighted)
 - Security escalation penalty discourages ignoring critical signals
+- All scores clamped strictly to (0.05, 0.95)
 
 ## Setup
 
@@ -103,12 +107,23 @@ Evaluated with `meta-llama/Llama-3.3-70B-Instruct` via HuggingFace router (tempe
 
 | Task       | Score |
 |------------|-------|
-| Easy       | 1.000 |
+| Easy       | 0.950 |
 | Medium     | 0.500 |
-| Hard       | 1.000 |
-| **Avg**    | **0.833** |
+| Hard       | 0.850 |
+| **Avg**    | **0.767** |
 
 Scores vary per run due to random bug sampling from a pool of 5 bugs per task.
+
+## API Endpoints
+
+| Method | Endpoint         | Description                        |
+|--------|------------------|------------------------------------|
+| GET    | `/`              | Health check                       |
+| POST   | `/reset`         | Start new episode for a task       |
+| POST   | `/step`          | Submit triage action               |
+| GET    | `/state`         | Get current episode state          |
+| GET    | `/tasks`         | List all tasks with grader info    |
+| GET    | `/tasks/{id}`    | Get specific task metadata         |
 
 ## Project structure
 
@@ -119,7 +134,7 @@ bug-triage-env/
 │   ├── environment.py   # BugTriageEnvironment core logic
 │   ├── task.py          # Bug reports + graders
 │   └── requirements.txt
-├── model.py             # Dataclass models
+├── model.py             # Pydantic models
 ├── client.py            # HTTP client
 ├── baseline.py          # Groq development script
 ├── inference.py         # OpenAI client submission script
