@@ -30,7 +30,7 @@ class BugTriageEnvironment(Environment):
             episode_id=str(uuid.uuid4()),
             current_task="easy",
             step_count=0,
-            total_score=0.0,
+            total_score=0.05,
             tasks_completed=[],
         )
 
@@ -65,16 +65,16 @@ class BugTriageEnvironment(Environment):
             episode_id=episode_id or str(uuid.uuid4()),
             current_task=task_id,
             step_count=0,
-            total_score=0.0,
+            total_score=0.05,
             tasks_completed=[],
         )
         return TriageObservation(
             bug_report=self._current_bug,
             task_id=task_id,
-            score=0.0,
+            score=0.05,
             feedback=f"Episode started for task: {task_id}. Triage this bug report.",
             done=False,
-            reward=0.0,
+            reward=0.05,
         )
 
     def step(self, action: TriageAction) -> TriageObservation:
@@ -83,10 +83,10 @@ class BugTriageEnvironment(Environment):
             return TriageObservation(
                 bug_report=self._current_bug,
                 task_id=self._current_task_key,
-                score=0.0,
+                score=0.05,
                 feedback="Episode already complete. Call reset() to start a new episode.",
                 done=True,
-                reward=0.0,
+                reward=0.05,
             )
 
         self._state.step_count += 1
