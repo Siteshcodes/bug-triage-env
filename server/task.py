@@ -303,7 +303,7 @@ def grade_action(task_key, bug, action):
     
 def priority_match(*args, **kwargs):
     if len(args) < 2:
-        return 0.0
+        return 0.5
 
     bug = args[0]
     action = args[1]
@@ -314,7 +314,7 @@ def priority_match(*args, **kwargs):
 
 def priority_label_team(*args, **kwargs):
     if len(args) < 2:
-        return 0.0
+        return 0.5
 
     bug = args[0]
     action = args[1]
@@ -325,7 +325,7 @@ def priority_label_team(*args, **kwargs):
 
 def full_triage(*args, **kwargs):
     if len(args) < 2:
-        return 0.0
+        return 0.5
 
     bug = args[0]
     action = args[1]
