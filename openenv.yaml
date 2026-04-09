@@ -1,6 +1,33 @@
+spec_version: 1
 name: bug-triage-env
-version: 1.0
-description: Bug report triage RL environment
+version: "1.0.0"
+description: >
+  A reinforcement learning environment where an agent triages
+  GitHub-style bug reports by assigning priority, labels, team,
+  and milestone. 3 tasks of increasing difficulty (easy → medium → hard).
+endpoint: https://siteshcodes-bug-triage-env.hf.space
+tags:
+  - openenv
+  - bug-triage
+  - real-world
+  - nlp
+tasks:
+  - id: easy
+    description: Assign correct P0-P3 priority to a bug report
+    grader: priority_match
+    reward_range: [0.0, 1.0]
+  - id: medium
+    description: Assign correct priority, labels, and team routing
+    grader: priority_label_team
+    reward_range: [0.0, 1.0]
+  - id: hard
+    description: Full triage with priority, labels, team, milestone and security penalty
+    grader: full_triage
+    reward_range: [0.0, 1.0]
+endpoints:
+  reset: /reset
+  step: /step
+  state: /state
 actions:
   priority: string
   labels: list
@@ -14,11 +41,3 @@ observations:
   reward: float
   feedback: string
   done: bool
-tasks:
-  - easy
-  - medium
-  - hard
-endpoints:
-  reset: /reset
-  step: /step
-  state: /state
