@@ -33,8 +33,8 @@ TASK_IDS                = ["easy", "medium", "hard"]
 BENCHMARK               = "bug-triage-env"
 TEMPERATURE             = 0.0
 MAX_TOKENS              = 400
-MAX_STEPS               = 3
-MAX_TOTAL_REWARD        = 3.0    # Maximum possible cumulative reward (3 tasks × 1.0 each)
+MAX_STEPS               = 1       # Each task is 1 step (reset → step → done)
+MAX_TOTAL_REWARD        = 1.0     # Per-task max reward
 SUCCESS_SCORE_THRESHOLD = 0.4
 
 print(f"[CONFIG] API_BASE_URL={API_BASE_URL}", flush=True)
@@ -238,26 +238,32 @@ def call_model(client: OpenAI, bug_text: str) -> TriageAction:
 # ── main ──────────────────────────────────────────────────────────────────
 
 def main() -> None:
-    client  = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
-    rewards: List[float] = []
-    score = 0.05
-    success = False
-    steps_taken = 0
+    client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
-    # Emit [START] once before the loop (matches sample format)
-    log_start(task="bug-triage", env=BENCHMARK, model=MODEL_NAME)
+    # Run each task separately with its own [START]/[STEP]/[END] block
+    # so the validator can count 3 distinct tasks with grader scores.
+    all_scores = []
 
-    try:
-        with BugTriageClient(base_url=ENV_BASE_URL) as env:
-            for step_num, task_id in enumerate(TASK_IDS, start=1):
-                obs    = env.reset(task_id=task_id)
+    with BugTriageClient(base_url=ENV_BASE_URL) as env:
+        for task_id in TASK_IDS:
+            rewards: List[float] = []
+            score = 0.0
+            success = False
+            steps_taken = 0
+
+            # [START] for this task
+            log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
+
+            try:
+                obs = env.reset(task_id=task_id)
                 action = call_model(client, format_bug(obs))
                 result = env.step(action)
+
                 reward = float(result.reward or 0.05)
                 # Strictly clamp each reward to (0, 1) exclusive
                 reward = max(0.01, min(0.99, reward))
                 rewards.append(reward)
-                steps_taken = step_num
+                steps_taken = 1
 
                 action_str = (
                     f"priority={action.priority},"
@@ -265,27 +271,32 @@ def main() -> None:
                     f"milestone={action.milestone}"
                 )
                 log_step(
-                    step=step_num,
+                    step=1,
                     action=action_str,
                     reward=reward,
                     done=True,
                 )
-                time.sleep(0.5)
 
-        # Calculate final score: sum of rewards / max possible
-        score = sum(rewards) / MAX_TOTAL_REWARD if MAX_TOTAL_REWARD > 0 else 0.0
-        # Clamp to [0, 1] — but ensure strictly within (0, 1)
-        score = min(max(score, 0.01), 0.99)
-        success = score >= SUCCESS_SCORE_THRESHOLD
+                # Score for this task
+                score = sum(rewards) / MAX_TOTAL_REWARD if MAX_TOTAL_REWARD > 0 else 0.0
+                score = min(max(score, 0.01), 0.99)
+                success = score >= SUCCESS_SCORE_THRESHOLD
 
-    except Exception as exc:
-        print(f"[ERROR] {type(exc).__name__}: {exc}", flush=True)
-        score = sum(rewards) / MAX_TOTAL_REWARD if rewards else 0.05
-        score = min(max(score, 0.01), 0.99)
-        success = False
+            except Exception as exc:
+                print(f"[ERROR] {type(exc).__name__}: {exc}", flush=True)
+                score = sum(rewards) / MAX_TOTAL_REWARD if rewards else 0.05
+                score = min(max(score, 0.01), 0.99)
+                success = False
 
-    finally:
-        log_end(success, steps_taken, score, rewards)
+            # [END] for this task
+            log_end(success, steps_taken, score, rewards)
+            all_scores.append(score)
+
+            time.sleep(0.5)
+
+    # Summary
+    avg_score = sum(all_scores) / len(all_scores) if all_scores else 0.0
+    print(f"[SUMMARY] tasks={len(all_scores)} avg_score={avg_score:.2f} scores={all_scores}", flush=True)
 
 
 if __name__ == "__main__":

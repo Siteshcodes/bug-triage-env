@@ -10,11 +10,14 @@ from task import grade_action, sample_bug
 VALID_TASKS = ["easy", "medium", "hard"]
 
 TASKS_META = [
-    {"id": "easy", "grader": "priority_match", "reward_range": [0.0, 1.0],
+    {"id": "easy", "name": "Priority Assignment", "grader": "server.task:priority_match",
+     "difficulty": "easy", "reward_range": [0.0, 1.0],
      "description": "Assign a single P0-P3 priority to a bug report"},
-    {"id": "medium", "grader": "priority_label_team", "reward_range": [0.0, 1.0],
+    {"id": "medium", "name": "Priority Labels and Team", "grader": "server.task:priority_label_team",
+     "difficulty": "medium", "reward_range": [0.0, 1.0],
      "description": "Assign priority, labels, and team routing"},
-    {"id": "hard", "grader": "full_triage", "reward_range": [0.0, 1.0],
+    {"id": "hard", "name": "Full Triage", "grader": "server.task:full_triage",
+     "difficulty": "hard", "reward_range": [0.0, 1.0],
      "description": "Full triage with security escalation penalty"},
 ]
 

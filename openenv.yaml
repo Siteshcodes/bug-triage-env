@@ -13,16 +13,22 @@ tags:
   - nlp
 tasks:
   - id: easy
+    name: Priority Assignment
     description: Assign correct P0-P3 priority to a bug report
-    grader: priority_match
+    difficulty: easy
+    grader: server.task:priority_match
     reward_range: [0.0, 1.0]
   - id: medium
+    name: Priority Labels and Team
     description: Assign correct priority, labels, and team routing
-    grader: priority_label_team
+    difficulty: medium
+    grader: server.task:priority_label_team
     reward_range: [0.0, 1.0]
   - id: hard
+    name: Full Triage
     description: Full triage with priority, labels, team, milestone and security penalty
-    grader: full_triage
+    difficulty: hard
+    grader: server.task:full_triage
     reward_range: [0.0, 1.0]
 endpoints:
   reset: /reset
