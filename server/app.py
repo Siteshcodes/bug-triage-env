@@ -72,13 +72,19 @@ for route in routes_to_remove:
     app.routes.remove(route)
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok", "env": "bug-triage-env"}
+
 @app.get("/")
 def root():
-    return {"status": "ok", "env": "bug-triage-env"}
+    """Serve the interactive demo frontend at root."""
+    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    return FileResponse(os.path.join(static_dir, "index.html"))
 
 @app.get("/web")
 def web_ui():
-    """Serve the interactive demo frontend."""
+    """Alias for the frontend."""
     static_dir = os.path.join(os.path.dirname(__file__), "static")
     return FileResponse(os.path.join(static_dir, "index.html"))
 
