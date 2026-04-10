@@ -15,15 +15,15 @@ tasks:
   - id: easy
     description: Assign correct P0-P3 priority to a bug report
     grader: priority_match
-    reward_range: [0.05, 0.95]
+    reward_range: [0.0, 1.0]
   - id: medium
     description: Assign correct priority, labels, and team routing
     grader: priority_label_team
-    reward_range: [0.05, 0.95]
+    reward_range: [0.0, 1.0]
   - id: hard
     description: Full triage with priority, labels, team, milestone and security penalty
     grader: full_triage
-    reward_range: [0.05, 0.95]
+    reward_range: [0.0, 1.0]
 endpoints:
   reset: /reset
   step: /step

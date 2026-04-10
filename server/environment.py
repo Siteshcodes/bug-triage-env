@@ -10,11 +10,11 @@ from task import grade_action, sample_bug
 VALID_TASKS = ["easy", "medium", "hard"]
 
 TASKS_META = [
-    {"id": "easy", "grader": "priority_match", "reward_range": [0.05, 0.95],
+    {"id": "easy", "grader": "priority_match", "reward_range": [0.0, 1.0],
      "description": "Assign a single P0-P3 priority to a bug report"},
-    {"id": "medium", "grader": "priority_label_team", "reward_range": [0.05, 0.95],
+    {"id": "medium", "grader": "priority_label_team", "reward_range": [0.0, 1.0],
      "description": "Assign priority, labels, and team routing"},
-    {"id": "hard", "grader": "full_triage", "reward_range": [0.05, 0.95],
+    {"id": "hard", "grader": "full_triage", "reward_range": [0.0, 1.0],
      "description": "Full triage with security escalation penalty"},
 ]
 
@@ -23,6 +23,7 @@ class BugTriageEnvironment(Environment):
     SUPPORTS_CONCURRENT_SESSIONS = True
 
     def __init__(self):
+        super().__init__()
         self._current_task_key: str = "easy"
         self._episode_done: bool = False
         self._current_bug: BugReport = sample_bug("easy")

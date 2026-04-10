@@ -251,6 +251,7 @@ def _priority_score(predicted: str, correct: str) -> float:
     return 0.5 if diff == 1 else 0.05
 
 
+
 def _label_score(predicted: List[str], correct: List[str]) -> float:
     pred_set = set(l.lower() for l in predicted)
     corr_set = set(l.lower() for l in correct)
@@ -270,7 +271,7 @@ def grade_action(task_key, bug, action):
         score = _priority_score(action.priority, answer["priority"])
         symbol = "✓" if score >= 0.9 else "~" if score >= 0.4 else "✗"
         feedback_parts.append(f"Priority: {symbol} (got {action.priority}, expected {answer['priority']})")
-        score = max(0.05, min(0.95, score))
+        score = max(0.01, min(0.99, score))
         return round(score, 3), " | ".join(feedback_parts)
 
     elif task_key == "medium":
@@ -282,7 +283,7 @@ def grade_action(task_key, bug, action):
         feedback_parts.append(f"Priority: {p_score:.2f} (got {action.priority}, expected {answer['priority']})")
         feedback_parts.append(f"Labels: {l_score:.2f}")
         feedback_parts.append(f"Team: {t_score:.2f} (got {action.assigned_team}, expected {expected_team})")
-        score = max(0.05, min(0.95, score))
+        score = max(0.01, min(0.99, score))
         return round(score, 3), " | ".join(feedback_parts)
 
     else:  # hard
@@ -296,9 +297,9 @@ def grade_action(task_key, bug, action):
         feedback_parts.append(f"Team: {t_score:.2f} (got {action.assigned_team}, expected {answer['assigned_team']})")
         feedback_parts.append(f"Milestone: {m_score:.2f} (got {action.milestone}, expected {answer['milestone']})")
         if answer.get("assigned_team") == "security" and action.assigned_team.lower() != "security":
-            score = max(0.05, score - 0.15)
+            score = max(0.01, score - 0.15)
             feedback_parts.append("⚠ Security escalation missed (-0.15)")
-        score = max(0.05, min(0.95, score))
+        score = max(0.01, min(0.99, score))
         return round(score, 3), " | ".join(feedback_parts)
     
 def priority_match(*args, **kwargs):

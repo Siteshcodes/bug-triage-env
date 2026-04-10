@@ -15,7 +15,6 @@ import time
 import textwrap
 import requests
 from typing import List, Optional
-from dataclasses import asdict
 
 from openai import OpenAI
 from model import TriageAction, TriageObservation, BugReport
@@ -34,6 +33,8 @@ TASK_IDS                = ["easy", "medium", "hard"]
 BENCHMARK               = "bug-triage-env"
 TEMPERATURE             = 0.0
 MAX_TOKENS              = 400
+MAX_STEPS               = 3
+MAX_TOTAL_REWARD        = 3.0    # Maximum possible cumulative reward (3 tasks × 1.0 each)
 SUCCESS_SCORE_THRESHOLD = 0.4
 
 print(f"[CONFIG] API_BASE_URL={API_BASE_URL}", flush=True)
@@ -97,9 +98,15 @@ class BugTriageClient:
         response.raise_for_status()
         data = response.json()
         obs = _parse_observation(data.get("observation", data))
+        reward = data.get("reward", obs.reward)
+        if reward is None or reward == 0:
+            reward = 0.05
+        reward = float(reward)
+        # Strictly clamp to open interval (0, 1)
+        reward = max(0.01, min(0.99, reward))
         return StepResult(
             observation=obs,
-            reward=data.get("reward", obs.reward) or 0.05,
+            reward=reward,
             done=data.get("done", obs.done),
             info={},
         )
@@ -235,17 +242,22 @@ def main() -> None:
     rewards: List[float] = []
     score = 0.05
     success = False
+    steps_taken = 0
+
+    # Emit [START] once before the loop (matches sample format)
+    log_start(task="bug-triage", env=BENCHMARK, model=MODEL_NAME)
 
     try:
         with BugTriageClient(base_url=ENV_BASE_URL) as env:
-            for step, task_id in enumerate(TASK_IDS, start=1):
-                log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
-
+            for step_num, task_id in enumerate(TASK_IDS, start=1):
                 obs    = env.reset(task_id=task_id)
                 action = call_model(client, format_bug(obs))
                 result = env.step(action)
                 reward = float(result.reward or 0.05)
+                # Strictly clamp each reward to (0, 1) exclusive
+                reward = max(0.01, min(0.99, reward))
                 rewards.append(reward)
+                steps_taken = step_num
 
                 action_str = (
                     f"priority={action.priority},"
@@ -253,23 +265,27 @@ def main() -> None:
                     f"milestone={action.milestone}"
                 )
                 log_step(
-                    step=step,
+                    step=step_num,
                     action=action_str,
                     reward=reward,
                     done=True,
                 )
                 time.sleep(0.5)
 
-        score   = sum(rewards) / len(TASK_IDS)
+        # Calculate final score: sum of rewards / max possible
+        score = sum(rewards) / MAX_TOTAL_REWARD if MAX_TOTAL_REWARD > 0 else 0.0
+        # Clamp to [0, 1] — but ensure strictly within (0, 1)
+        score = min(max(score, 0.01), 0.99)
         success = score >= SUCCESS_SCORE_THRESHOLD
 
     except Exception as exc:
         print(f"[ERROR] {type(exc).__name__}: {exc}", flush=True)
-        score = sum(rewards) / len(TASK_IDS) if rewards else 0.05
+        score = sum(rewards) / MAX_TOTAL_REWARD if rewards else 0.05
+        score = min(max(score, 0.01), 0.99)
         success = False
 
     finally:
-        log_end(success, len(rewards), score, rewards)
+        log_end(success, steps_taken, score, rewards)
 
 
 if __name__ == "__main__":
