@@ -1,5 +1,6 @@
 # server/app.py
 import sys
+import os
 import json
 sys.path.insert(0, "/app")
 sys.path.insert(0, "/app/server")
@@ -9,6 +10,8 @@ from model import TriageAction, TriageObservation
 from environment import BugTriageEnvironment
 from task import sample_bug, grade_action, TASKS
 from fastapi import Response, Request
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 
@@ -72,6 +75,12 @@ for route in routes_to_remove:
 @app.get("/")
 def root():
     return {"status": "ok", "env": "bug-triage-env"}
+
+@app.get("/web")
+def web_ui():
+    """Serve the interactive demo frontend."""
+    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    return FileResponse(os.path.join(static_dir, "index.html"))
 
 @app.get("/tasks")
 def list_tasks():
