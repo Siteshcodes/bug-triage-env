@@ -101,7 +101,6 @@ class BugTriageClient:
         if reward is None or reward == 0:
             reward = 0.05
         reward = float(reward)
-        # Strictly clamp to open interval (0, 1)
         reward = max(0.01, min(0.99, reward))
         return StepResult(
             observation=obs,
@@ -248,8 +247,6 @@ def main() -> None:
             score = 0.0
             success = False
             steps_taken = 0
-
-            # [START] for this task
             log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
 
             try:
@@ -258,7 +255,6 @@ def main() -> None:
                 result = env.step(action)
 
                 reward = float(result.reward or 0.05)
-                # Strictly clamp each reward to (0, 1) exclusive
                 reward = max(0.01, min(0.99, reward))
                 rewards.append(reward)
                 steps_taken = 1
