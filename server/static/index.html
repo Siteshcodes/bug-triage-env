@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bug Triage Environment — OpenEnv</title>
+    <title>Bug Triage Environment v2.0 — OpenEnv</title>
+    <meta name="description" content="Multi-step RL environment for AI bug triage — investigate, decide, and learn.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
@@ -44,532 +45,228 @@
             overflow-x: hidden;
         }
 
-        /* ── Background Effects ─────────────────────────── */
         .bg-grid {
-            position: fixed;
-            inset: 0;
+            position: fixed; inset: 0;
             background-image:
                 linear-gradient(rgba(139, 92, 246, 0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(139, 92, 246, 0.03) 1px, transparent 1px);
             background-size: 60px 60px;
-            pointer-events: none;
-            z-index: 0;
+            pointer-events: none; z-index: 0;
         }
-        .bg-orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(120px);
-            pointer-events: none;
-            z-index: 0;
-        }
+        .bg-orb { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; }
         .bg-orb-1 { width: 600px; height: 600px; top: -200px; right: -100px; background: rgba(139, 92, 246, 0.08); }
         .bg-orb-2 { width: 500px; height: 500px; bottom: -150px; left: -100px; background: rgba(6, 182, 212, 0.06); }
         .bg-orb-3 { width: 400px; height: 400px; top: 40%; left: 50%; transform: translateX(-50%); background: rgba(59, 130, 246, 0.04); }
 
-        /* ── Layout ─────────────────────────────────────── */
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 0 24px;
-            position: relative;
-            z-index: 1;
-        }
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
 
-        /* ── Header ─────────────────────────────────────── */
-        .header {
-            padding: 48px 0 32px;
-            text-align: center;
-        }
+        /* ── Header ─────────────────────── */
+        .header { padding: 40px 0 28px; text-align: center; }
         .header-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 16px;
-            background: rgba(139, 92, 246, 0.1);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 100px;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--accent-purple);
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            margin-bottom: 20px;
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 6px 16px; background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 100px;
+            font-size: 12px; font-weight: 500; color: var(--accent-purple);
+            letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 16px;
         }
         .header-badge .dot {
-            width: 6px; height: 6px;
-            background: var(--accent-green);
-            border-radius: 50%;
-            animation: pulse-dot 2s ease-in-out infinite;
+            width: 6px; height: 6px; background: var(--accent-green);
+            border-radius: 50%; animation: pulse-dot 2s ease-in-out infinite;
         }
-        @keyframes pulse-dot {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-        .header h1 {
-            font-size: 48px;
-            font-weight: 800;
-            letter-spacing: -1.5px;
-            line-height: 1.1;
-            margin-bottom: 12px;
-        }
-        .header h1 .emoji { font-size: 44px; margin-right: 4px; }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .header h1 { font-size: 44px; font-weight: 800; letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 10px; }
+        .header h1 .emoji { font-size: 40px; margin-right: 4px; }
         .header h1 .gradient-text {
-            background: var(--gradient-main);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            background: var(--gradient-main); -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent; background-clip: text;
         }
-        .header p {
-            font-size: 17px;
-            color: var(--text-secondary);
-            max-width: 600px;
-            margin: 0 auto;
-        }
+        .header p { font-size: 16px; color: var(--text-secondary); max-width: 640px; margin: 0 auto; }
+        .version-tag { font-size: 11px; background: rgba(16,185,129,0.12); color: var(--accent-green); padding: 2px 8px; border-radius: 4px; font-weight: 600; }
 
-        /* ── Task Selector ──────────────────────────────── */
-        .task-selector {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 14px;
-            margin: 32px 0;
-        }
+        /* ── Task Selector ──────────────── */
+        .task-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 24px 0; }
         .task-card {
-            position: relative;
-            padding: 20px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(12px);
-            overflow: hidden;
+            position: relative; padding: 18px; background: var(--bg-card);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(12px); overflow: hidden;
         }
-        .task-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
+        .task-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; opacity: 0; transition: opacity 0.3s; }
         .task-card[data-task="easy"]::before { background: var(--accent-green); }
         .task-card[data-task="medium"]::before { background: var(--accent-amber); }
         .task-card[data-task="hard"]::before { background: var(--accent-red); }
-
-        .task-card:hover {
-            background: var(--bg-card-hover);
-            border-color: rgba(255, 255, 255, 0.1);
-            transform: translateY(-2px);
-        }
-        .task-card.active {
-            border-color: var(--border-active);
-            background: var(--bg-card-hover);
-            box-shadow: var(--shadow-glow);
-        }
+        .task-card:hover { background: var(--bg-card-hover); border-color: rgba(255,255,255,0.1); transform: translateY(-2px); }
+        .task-card.active { border-color: var(--border-active); background: var(--bg-card-hover); box-shadow: var(--shadow-glow); }
         .task-card.active::before { opacity: 1; }
+        .task-difficulty { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .task-card[data-task="easy"] .task-difficulty { background: rgba(16,185,129,0.1); color: var(--accent-green); }
+        .task-card[data-task="medium"] .task-difficulty { background: rgba(245,158,11,0.1); color: var(--accent-amber); }
+        .task-card[data-task="hard"] .task-difficulty { background: rgba(239,68,68,0.1); color: var(--accent-red); }
+        .task-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .task-card p { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
+        .task-steps { margin-top: 8px; font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
 
-        .task-difficulty {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 100px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 10px;
+        /* ── Step Tracker ───────────────── */
+        .step-tracker {
+            display: flex; align-items: center; gap: 4px;
+            padding: 12px 20px; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius); margin-bottom: 16px; backdrop-filter: blur(12px);
         }
-        .task-card[data-task="easy"] .task-difficulty { background: rgba(16, 185, 129, 0.1); color: var(--accent-green); }
-        .task-card[data-task="medium"] .task-difficulty { background: rgba(245, 158, 11, 0.1); color: var(--accent-amber); }
-        .task-card[data-task="hard"] .task-difficulty { background: rgba(239, 68, 68, 0.1); color: var(--accent-red); }
+        .step-dot {
+            width: 28px; height: 28px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-size: 11px;
+            font-weight: 600; transition: all 0.3s;
+        }
+        .step-dot.pending { background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border); }
+        .step-dot.active { background: var(--accent-purple); color: white; border: 1px solid var(--accent-purple); box-shadow: 0 0 12px rgba(139,92,246,0.4); }
+        .step-dot.done { background: rgba(16,185,129,0.15); color: var(--accent-green); border: 1px solid rgba(16,185,129,0.3); }
+        .step-line { flex: 1; height: 2px; background: var(--border); }
+        .step-line.done { background: rgba(16,185,129,0.3); }
+        .step-label { margin-left: auto; font-size: 12px; color: var(--text-muted); font-weight: 500; }
 
-        .task-card h3 {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 6px;
+        /* ── Investigation Bar ──────────── */
+        .investigate-bar {
+            display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
         }
-        .task-card p {
-            font-size: 13px;
-            color: var(--text-secondary);
-            line-height: 1.5;
+        .investigate-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 10px 16px; background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border); border-radius: var(--radius-sm);
+            color: var(--text-secondary); font-family: 'Inter', sans-serif; font-size: 13px;
+            font-weight: 500; cursor: pointer; transition: all 0.25s;
         }
-        .task-grader {
-            margin-top: 10px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            color: var(--text-muted);
-        }
+        .investigate-btn:hover:not(:disabled) { background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.3); color: var(--text-primary); }
+        .investigate-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .investigate-btn.revealed { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.25); color: var(--accent-green); }
+        .investigate-btn .emoji { font-size: 16px; }
 
-        /* ── Main Content ───────────────────────────────── */
-        .content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .panel {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            backdrop-filter: blur(12px);
-            overflow: hidden;
-        }
+        /* ── Content Panels ─────────────── */
+        .content { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+        .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); backdrop-filter: blur(12px); overflow: hidden; }
         .panel-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 20px; border-bottom: 1px solid var(--border);
         }
-        .panel-header h2 {
-            font-size: 14px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .panel-body { padding: 20px; }
+        .panel-header h2 { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .panel-body { padding: 18px; }
 
-        /* ── Bug Report Panel ───────────────────────────── */
-        .bug-placeholder {
-            text-align: center;
-            padding: 48px 20px;
-            color: var(--text-muted);
-        }
-        .bug-placeholder .icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-            opacity: 0.5;
-        }
+        /* ── Bug Report ─────────────────── */
+        .bug-placeholder { text-align: center; padding: 48px 20px; color: var(--text-muted); }
+        .bug-placeholder .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
         .bug-placeholder p { font-size: 14px; }
-
-        .bug-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 4px;
-            line-height: 1.3;
-        }
-        .bug-meta {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-bottom: 16px;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-        .bug-meta .tag {
-            padding: 2px 8px;
-            background: rgba(139, 92, 246, 0.1);
-            color: var(--accent-purple);
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 500;
-        }
+        .bug-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; line-height: 1.3; }
+        .bug-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 14px; display: flex; gap: 10px; align-items: center; }
+        .bug-meta .tag { padding: 2px 8px; background: rgba(139,92,246,0.1); color: var(--accent-purple); border-radius: 4px; font-size: 11px; font-weight: 500; }
         .bug-body {
-            font-size: 14px;
-            color: var(--text-secondary);
-            line-height: 1.7;
-            margin-bottom: 16px;
-            padding: 14px;
-            background: rgba(0,0,0,0.2);
-            border-radius: var(--radius-sm);
-            border-left: 3px solid var(--accent-purple);
+            font-size: 14px; color: var(--text-secondary); line-height: 1.7;
+            margin-bottom: 14px; padding: 12px 14px; background: rgba(0,0,0,0.2);
+            border-radius: var(--radius-sm); border-left: 3px solid var(--accent-purple);
         }
-        .bug-comments-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
+        .bug-body.truncated { position: relative; }
+        .bug-body.truncated::after {
+            content: '👁 Use "Read Full Body" to reveal...';
+            display: block; margin-top: 8px; font-size: 11px; color: var(--accent-amber);
+            font-style: italic;
         }
+        .bug-hidden-section {
+            margin-top: 12px; padding: 10px 14px; background: rgba(0,0,0,0.15);
+            border-radius: var(--radius-xs); border: 1px dashed rgba(255,255,255,0.06);
+            animation: reveal 0.4s ease;
+        }
+        @keyframes reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .bug-hidden-section .section-title { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
         .bug-comment {
-            padding: 10px 14px;
-            background: rgba(0,0,0,0.15);
-            border-radius: var(--radius-xs);
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-bottom: 6px;
-            border-left: 2px solid rgba(139, 92, 246, 0.3);
+            padding: 8px 12px; background: rgba(0,0,0,0.15); border-radius: var(--radius-xs);
+            font-size: 13px; color: var(--text-secondary); margin-bottom: 5px;
+            border-left: 2px solid rgba(139,92,246,0.3);
         }
-        .bug-labels {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            margin-top: 12px;
-        }
-        .bug-label {
-            padding: 3px 10px;
-            background: rgba(59, 130, 246, 0.1);
-            color: var(--accent-blue);
-            border-radius: 100px;
-            font-size: 11px;
-            font-weight: 500;
-        }
+        .bug-labels { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+        .bug-label { padding: 3px 10px; background: rgba(59,130,246,0.1); color: var(--accent-blue); border-radius: 100px; font-size: 11px; font-weight: 500; }
+        .hidden-placeholder { padding: 16px; text-align: center; color: var(--text-muted); font-size: 12px; font-style: italic; border: 1px dashed rgba(255,255,255,0.06); border-radius: var(--radius-xs); }
 
-        /* ── Triage Form Panel ──────────────────────────── */
-        .form-group {
-            margin-bottom: 16px;
-        }
-        .form-group label {
-            display: block;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 6px;
-        }
+        /* ── Triage Form ────────────────── */
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
         .form-control {
-            width: 100%;
-            padding: 10px 14px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-xs);
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
-            font-size: 14px;
-            transition: border-color 0.2s;
-            outline: none;
+            width: 100%; padding: 10px 14px; background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border); border-radius: var(--radius-xs);
+            color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 14px;
+            transition: border-color 0.2s; outline: none;
         }
-        .form-control:focus {
-            border-color: var(--accent-purple);
-            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
-        }
+        .form-control:focus { border-color: var(--accent-purple); box-shadow: 0 0 0 3px rgba(139,92,246,0.1); }
         .form-control option { background: var(--bg-secondary); }
-        textarea.form-control {
-            min-height: 60px;
-            resize: vertical;
-        }
+        textarea.form-control { min-height: 56px; resize: vertical; }
 
-        .checkbox-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 6px; }
         .label-chip {
-            padding: 5px 12px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border);
-            border-radius: 100px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            user-select: none;
-            color: var(--text-secondary);
+            padding: 5px 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+            border-radius: 100px; font-size: 12px; cursor: pointer; transition: all 0.2s;
+            user-select: none; color: var(--text-secondary);
         }
-        .label-chip:hover { border-color: rgba(255, 255, 255, 0.15); }
-        .label-chip.selected {
-            background: rgba(139, 92, 246, 0.15);
-            border-color: var(--accent-purple);
-            color: var(--accent-purple);
-        }
+        .label-chip:hover { border-color: rgba(255,255,255,0.15); }
+        .label-chip.selected { background: rgba(139,92,246,0.15); border-color: var(--accent-purple); color: var(--accent-purple); }
 
-        /* ── Buttons ────────────────────────────────────── */
+        /* ── Buttons ────────────────────── */
         .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 12px 24px;
-            border: none;
-            border-radius: var(--radius-sm);
-            font-family: 'Inter', sans-serif;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            outline: none;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 11px 22px; border: none; border-radius: var(--radius-sm);
+            font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: all 0.25s cubic-bezier(0.4,0,0.2,1); outline: none;
         }
-        .btn-primary {
-            background: var(--gradient-main);
-            color: white;
-            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
-        }
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
-        }
+        .btn-primary { background: var(--gradient-main); color: white; box-shadow: 0 4px 15px rgba(139,92,246,0.3); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(139,92,246,0.4); }
         .btn-primary:active { transform: translateY(0); }
-        .btn-primary:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-secondary);
-            border: 1px solid var(--border);
-        }
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text-primary);
-        }
+        .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .btn-secondary { background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
         .btn-full { width: 100%; }
 
-        .action-bar {
-            display: flex;
-            gap: 10px;
-            margin-top: 8px;
-        }
-        .action-bar .btn { flex: 1; }
-
-        /* ── Results Panel ──────────────────────────────── */
-        .results {
-            margin-top: 20px;
-            animation: slide-up 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        @keyframes slide-up {
-            from { opacity: 0; transform: translateY(16px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .score-display {
-            text-align: center;
-            padding: 28px 20px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            backdrop-filter: blur(12px);
-        }
-        .score-label {
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-        }
-        .score-value {
-            font-size: 56px;
-            font-weight: 800;
-            letter-spacing: -2px;
-            margin-bottom: 4px;
-        }
+        /* ── Results ────────────────────── */
+        .results { margin-top: 16px; animation: slide-up 0.4s cubic-bezier(0.4,0,0.2,1); }
+        @keyframes slide-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        .score-display { text-align: center; padding: 24px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); backdrop-filter: blur(12px); }
+        .score-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 6px; }
+        .score-value { font-size: 52px; font-weight: 800; letter-spacing: -2px; margin-bottom: 4px; }
         .score-value.high { color: var(--accent-green); }
         .score-value.mid { color: var(--accent-amber); }
         .score-value.low { color: var(--accent-red); }
-
-        .score-bar-wrap {
-            width: 100%;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 100px;
-            overflow: hidden;
-            margin: 12px 0;
-        }
-        .score-bar {
-            height: 100%;
-            border-radius: 100px;
-            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
-            width: 0;
-        }
+        .score-bar-wrap { width: 100%; height: 8px; background: rgba(255,255,255,0.05); border-radius: 100px; overflow: hidden; margin: 10px 0; }
+        .score-bar { height: 100%; border-radius: 100px; transition: width 1s cubic-bezier(0.4,0,0.2,1); width: 0; }
         .score-bar.high { background: var(--gradient-cool); }
         .score-bar.mid { background: linear-gradient(90deg, var(--accent-amber), var(--accent-green)); }
         .score-bar.low { background: var(--gradient-warm); }
-
-        .feedback-box {
-            margin-top: 16px;
-            padding: 14px 18px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-        }
-        .feedback-title {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-        }
-        .feedback-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 0;
-            font-size: 13px;
-            color: var(--text-secondary);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-        }
+        .feedback-box { margin-top: 14px; padding: 12px 16px; background: rgba(0,0,0,0.2); border-radius: var(--radius-sm); border: 1px solid var(--border); text-align: left; }
+        .feedback-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; }
+        .feedback-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; color: var(--text-secondary); border-bottom: 1px solid rgba(255,255,255,0.03); }
         .feedback-item:last-child { border-bottom: none; }
-        .feedback-icon { font-size: 14px; }
 
-        /* ── Loading ────────────────────────────────────── */
-        .spinner {
-            display: inline-block;
-            width: 18px; height: 18px;
-            border: 2px solid rgba(255, 255, 255, 0.15);
-            border-top-color: var(--accent-purple);
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-        }
+        /* ── Spinner ────────────────────── */
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.15); border-top-color: var(--accent-purple); border-radius: 50%; animation: spin 0.7s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── How It Works ───────────────────────────────── */
-        .how-section {
-            margin: 48px 0;
-            padding: 36px 0;
-            border-top: 1px solid var(--border);
-        }
-        .how-section h2 {
-            font-size: 24px;
-            font-weight: 700;
-            text-align: center;
-            margin-bottom: 32px;
-        }
-        .how-steps {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-        }
-        .how-step {
-            text-align: center;
-            padding: 24px 16px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            position: relative;
-        }
-        .how-step-num {
-            width: 32px; height: 32px;
-            background: var(--gradient-main);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            font-weight: 700;
-            margin: 0 auto 12px;
-        }
-        .how-step h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
-        .how-step p { font-size: 12px; color: var(--text-secondary); }
-        .how-step .step-icon { font-size: 28px; margin-bottom: 10px; }
+        /* ── How It Works ───────────────── */
+        .how-section { margin: 40px 0; padding: 32px 0; border-top: 1px solid var(--border); }
+        .how-section h2 { font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 28px; }
+        .how-steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+        .how-step { text-align: center; padding: 20px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
+        .how-step-num { width: 28px; height: 28px; background: var(--gradient-main); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; margin: 0 auto 10px; }
+        .how-step h3 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+        .how-step p { font-size: 11px; color: var(--text-secondary); }
+        .how-step .step-icon { font-size: 24px; margin-bottom: 8px; }
 
-        /* ── Footer ─────────────────────────────────────── */
-        .footer {
-            text-align: center;
-            padding: 32px 0;
-            border-top: 1px solid var(--border);
-            color: var(--text-muted);
-            font-size: 13px;
-        }
-        .footer a {
-            color: var(--accent-purple);
-            text-decoration: none;
-        }
+        /* ── Footer ─────────────────────── */
+        .footer { text-align: center; padding: 28px 0; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 13px; }
+        .footer a { color: var(--accent-purple); text-decoration: none; }
         .footer a:hover { text-decoration: underline; }
-        .footer-links {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 12px;
-        }
+        .footer-links { display: flex; justify-content: center; gap: 20px; margin-bottom: 10px; }
 
-        /* ── Responsive ─────────────────────────────────── */
+        /* ── Responsive ─────────────────── */
         @media (max-width: 768px) {
-            .header h1 { font-size: 32px; }
+            .header h1 { font-size: 30px; }
             .task-selector { grid-template-columns: 1fr; }
             .content { grid-template-columns: 1fr; }
             .how-steps { grid-template-columns: repeat(2, 1fr); }
+            .investigate-bar { flex-direction: column; }
         }
     </style>
 </head>
@@ -580,17 +277,14 @@
     <div class="bg-orb bg-orb-3"></div>
 
     <div class="container">
-        <!-- Header -->
         <header class="header">
-            <div class="header-badge">
-                <span class="dot"></span>
-                OpenEnv Environment — Live
-            </div>
+            <div class="header-badge"><span class="dot"></span> OpenEnv Environment — Live</div>
             <h1>
                 <span class="emoji">🐛</span>
                 <span class="gradient-text">Bug Triage</span> Environment
+                <span class="version-tag">v2.0</span>
             </h1>
-            <p>Train and evaluate AI agents on real-world bug report triage — assigning priority, labels, team, and milestone.</p>
+            <p>Multi-step RL environment — investigate bug reports, gather evidence, then triage. Your agent must learn <em>when</em> it knows enough to decide.</p>
         </header>
 
         <!-- Task Selector -->
@@ -598,21 +292,42 @@
             <div class="task-card active" data-task="easy" onclick="selectTask('easy')">
                 <span class="task-difficulty">Easy</span>
                 <h3>Priority Assignment</h3>
-                <p>Assign a P0–P3 priority to a bug report</p>
-                <div class="task-grader">grader: priority_match</div>
+                <p>Investigate and assign P0–P3 priority</p>
+                <div class="task-steps">4 steps max · priority only</div>
             </div>
             <div class="task-card" data-task="medium" onclick="selectTask('medium')">
                 <span class="task-difficulty">Medium</span>
                 <h3>Priority + Labels + Team</h3>
-                <p>Assign priority, labels, and route to correct team</p>
-                <div class="task-grader">grader: priority_label_team</div>
+                <p>Investigate and assign priority, labels, team</p>
+                <div class="task-steps">5 steps max · weighted scoring</div>
             </div>
             <div class="task-card" data-task="hard" onclick="selectTask('hard')">
                 <span class="task-difficulty">Hard</span>
                 <h3>Full Triage</h3>
-                <p>Complete triage with security escalation penalty</p>
-                <div class="task-grader">grader: full_triage</div>
+                <p>Complete triage with security penalty</p>
+                <div class="task-steps">6 steps max · security penalty</div>
             </div>
+        </div>
+
+        <!-- Step Tracker -->
+        <div class="step-tracker" id="step-tracker" style="display:none;">
+            <div class="step-label" id="step-label">Step 0 / 4</div>
+        </div>
+
+        <!-- Investigation Bar -->
+        <div class="investigate-bar" id="investigate-bar" style="display:none;">
+            <button class="investigate-btn" id="btn-read-body" onclick="investigate('read_body')">
+                <span class="emoji">📖</span> Read Full Body
+            </button>
+            <button class="investigate-btn" id="btn-read-comments" onclick="investigate('read_comments')">
+                <span class="emoji">💬</span> Read Comments
+            </button>
+            <button class="investigate-btn" id="btn-check-logs" onclick="investigate('check_logs')">
+                <span class="emoji">📊</span> Check Logs
+            </button>
+            <button class="investigate-btn" id="btn-check-similar" onclick="investigate('check_similar')">
+                <span class="emoji">🔗</span> Similar Bugs
+            </button>
         </div>
 
         <!-- Main Content -->
@@ -622,13 +337,13 @@
                 <div class="panel-header">
                     <h2>📋 Bug Report</h2>
                     <button class="btn btn-secondary" onclick="fetchBug()" id="btn-reset" style="padding: 6px 14px; font-size: 12px;">
-                        Get New Bug
+                        Start Episode
                     </button>
                 </div>
                 <div class="panel-body" id="bug-area">
                     <div class="bug-placeholder">
                         <div class="icon">🐛</div>
-                        <p>Click <strong>"Get New Bug"</strong> to fetch a bug report</p>
+                        <p>Click <strong>"Start Episode"</strong> to begin investigating a bug</p>
                     </div>
                 </div>
             </div>
@@ -658,6 +373,7 @@
                             <span class="label-chip" data-label="data-integrity" onclick="toggleLabel(this)">data-integrity</span>
                             <span class="label-chip" data-label="payments" onclick="toggleLabel(this)">payments</span>
                             <span class="label-chip" data-label="documentation" onclick="toggleLabel(this)">documentation</span>
+                            <span class="label-chip" data-label="api" onclick="toggleLabel(this)">api</span>
                         </div>
                     </div>
                     <div class="form-group">
@@ -679,11 +395,11 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Reasoning</label>
-                        <textarea class="form-control" id="reasoning" placeholder="Why did you choose this triage?"></textarea>
+                        <label>Reasoning <span style="font-weight:400;text-transform:none;color:var(--accent-green)">(earns bonus!)</span></label>
+                        <textarea class="form-control" id="reasoning" placeholder="Why did you choose this triage? Mentioning relevant signals earns up to +0.15 bonus."></textarea>
                     </div>
                     <button class="btn btn-primary btn-full" id="btn-submit" onclick="submitTriage()" disabled>
-                        Submit Triage
+                        🎯 Submit Triage Decision
                     </button>
                 </div>
             </div>
@@ -692,65 +408,106 @@
         <!-- Results -->
         <div id="results-area"></div>
 
-        <!-- How It Works -->
+        <!-- How It Works (v2) -->
         <div class="how-section">
-            <h2>How It Works</h2>
+            <h2>How the Multi-Step Environment Works</h2>
             <div class="how-steps">
                 <div class="how-step">
                     <div class="step-icon">📡</div>
                     <div class="how-step-num">1</div>
                     <h3>Reset</h3>
-                    <p>Agent calls <code>/reset</code> to receive a bug report</p>
+                    <p>Agent calls /reset — sees title + body preview</p>
                 </div>
                 <div class="how-step">
-                    <div class="step-icon">🔍</div>
+                    <div class="step-icon">📖</div>
                     <div class="how-step-num">2</div>
-                    <h3>Observe</h3>
-                    <p>Read title, body, comments, and labels</p>
+                    <h3>Investigate</h3>
+                    <p>Read body, comments, logs — each costs a step</p>
+                </div>
+                <div class="how-step">
+                    <div class="step-icon">🤔</div>
+                    <div class="how-step-num">3</div>
+                    <h3>Decide</h3>
+                    <p>Enough info? Submit triage or investigate more</p>
                 </div>
                 <div class="how-step">
                     <div class="step-icon">🎯</div>
-                    <div class="how-step-num">3</div>
-                    <h3>Decide</h3>
-                    <p>Choose priority, labels, team, and milestone</p>
+                    <div class="how-step-num">4</div>
+                    <h3>Submit</h3>
+                    <p>Priority, labels, team, milestone, reasoning</p>
                 </div>
                 <div class="how-step">
                     <div class="step-icon">📊</div>
-                    <div class="how-step-num">4</div>
+                    <div class="how-step-num">5</div>
                     <h3>Score</h3>
-                    <p>Grader scores the triage decision (0–1)</p>
+                    <p>Semantic grading + efficiency bonus/penalty</p>
                 </div>
             </div>
         </div>
 
-        <!-- Footer -->
         <footer class="footer">
             <div class="footer-links">
                 <a href="https://github.com/Siteshcodes/bug-triage-env" target="_blank">GitHub</a>
                 <a href="/docs" target="_blank">API Docs</a>
                 <a href="/tasks" target="_blank">Tasks</a>
+                <a href="/leaderboard" target="_blank">Leaderboard</a>
             </div>
-            <p>Bug Triage Environment — Meta PyTorch Hackathon × Scaler School of Technology</p>
+            <p>Bug Triage Environment v2.0 — Meta PyTorch Hackathon × Scaler School of Technology</p>
         </footer>
     </div>
 
     <script>
         let currentTask = 'easy';
+        let sessionId = null;
         let hasBug = false;
+        let stepCount = 0;
+        let maxSteps = 4;
+        let isDone = false;
+
+        const maxStepsMap = { easy: 4, medium: 5, hard: 6 };
 
         function selectTask(task) {
             currentTask = task;
+            maxSteps = maxStepsMap[task];
             document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
             document.querySelector(`.task-card[data-task="${task}"]`).classList.add('active');
-            hasBug = false;
+            resetUI();
+        }
+
+        function resetUI() {
+            hasBug = false; isDone = false; stepCount = 0; sessionId = null;
             document.getElementById('btn-submit').disabled = true;
+            document.getElementById('step-tracker').style.display = 'none';
+            document.getElementById('investigate-bar').style.display = 'none';
             document.getElementById('bug-area').innerHTML = `
                 <div class="bug-placeholder">
                     <div class="icon">🐛</div>
-                    <p>Click <strong>"Get New Bug"</strong> to fetch a <strong>${task}</strong> bug report</p>
-                </div>
-            `;
+                    <p>Click <strong>"Start Episode"</strong> to investigate a <strong>${currentTask}</strong> bug</p>
+                </div>`;
             document.getElementById('results-area').innerHTML = '';
+            // Reset investigation buttons
+            ['btn-read-body', 'btn-read-comments', 'btn-check-logs', 'btn-check-similar'].forEach(id => {
+                const el = document.getElementById(id);
+                el.disabled = false;
+                el.classList.remove('revealed');
+            });
+        }
+
+        function updateStepTracker() {
+            const tracker = document.getElementById('step-tracker');
+            tracker.style.display = 'flex';
+
+            let dots = '';
+            for (let i = 1; i <= maxSteps; i++) {
+                const cls = i < stepCount + 1 ? 'done' : i === stepCount + 1 ? 'active' : 'pending';
+                dots += `<div class="step-dot ${cls}">${i}</div>`;
+                if (i < maxSteps) {
+                    const lineCls = i < stepCount + 1 ? 'done' : '';
+                    dots += `<div class="step-line ${lineCls}"></div>`;
+                }
+            }
+            dots += `<div class="step-label">Step ${stepCount} / ${maxSteps}</div>`;
+            tracker.innerHTML = dots;
         }
 
         async function fetchBug() {
@@ -765,51 +522,160 @@
                     body: JSON.stringify({ task_id: currentTask })
                 });
                 const data = await resp.json();
+                sessionId = data.session_id;
                 const obs = data.observation || data;
                 const bug = obs.bug_report;
+                stepCount = 0;
+                isDone = false;
 
                 let html = `
-                    <div class="bug-title">${escHtml(bug.title)}</div>
+                    <div class="bug-title">${esc(bug.title)}</div>
                     <div class="bug-meta">
-                        <span>by <strong>${escHtml(bug.author)}</strong></span>
-                        <span class="tag">${escHtml(bug.id)}</span>
+                        <span>by <strong>${esc(bug.author)}</strong></span>
+                        <span class="tag">${esc(bug.id)}</span>
+                        <span class="tag" style="background:rgba(245,158,11,0.1);color:var(--accent-amber)">
+                            ${maxSteps} steps max
+                        </span>
                     </div>
-                    <div class="bug-body">${escHtml(bug.body)}</div>
-                `;
+                    <div class="bug-body truncated" id="bug-body-text">${esc(bug.body)}</div>`;
 
                 if (bug.labels_hint && bug.labels_hint.length > 0) {
                     html += `<div class="bug-labels">${bug.labels_hint.map(l =>
-                        `<span class="bug-label">${escHtml(l)}</span>`
-                    ).join('')}</div>`;
+                        `<span class="bug-label">${esc(l)}</span>`).join('')}</div>`;
                 }
 
-                if (bug.comments && bug.comments.length > 0) {
-                    html += `<div class="bug-comments-title" style="margin-top:16px">Comments (${bug.comments.length})</div>`;
-                    html += bug.comments.map(c => `<div class="bug-comment">${escHtml(c)}</div>`).join('');
-                }
+                // Hidden sections placeholders
+                html += `<div id="comments-section"></div>`;
+                html += `<div id="logs-section"></div>`;
+                html += `<div id="similar-section"></div>`;
 
                 document.getElementById('bug-area').innerHTML = html;
                 document.getElementById('btn-submit').disabled = false;
+                document.getElementById('investigate-bar').style.display = 'flex';
                 document.getElementById('results-area').innerHTML = '';
                 hasBug = true;
+
+                // Reset investigation buttons
+                ['btn-read-body', 'btn-read-comments', 'btn-check-logs', 'btn-check-similar'].forEach(id => {
+                    const el = document.getElementById(id);
+                    el.disabled = false;
+                    el.classList.remove('revealed');
+                });
+
+                updateStepTracker();
             } catch (err) {
                 document.getElementById('bug-area').innerHTML = `
                     <div class="bug-placeholder">
                         <div class="icon">⚠️</div>
-                        <p>Error: ${escHtml(err.message)}</p>
-                    </div>
-                `;
+                        <p>Error: ${esc(err.message)}</p>
+                    </div>`;
             }
-
-            btn.innerHTML = 'Get New Bug';
+            btn.innerHTML = 'Start Episode';
             btn.disabled = false;
         }
 
+        async function investigate(actionType) {
+            if (!hasBug || isDone) return;
+
+            const btnMap = {
+                read_body: 'btn-read-body',
+                read_comments: 'btn-read-comments',
+                check_logs: 'btn-check-logs',
+                check_similar: 'btn-check-similar',
+            };
+            const btn = document.getElementById(btnMap[actionType]);
+            btn.innerHTML = '<span class="spinner"></span>';
+            btn.disabled = true;
+
+            try {
+                const payload = { action: { action_type: actionType } };
+                if (sessionId) payload.session_id = sessionId;
+
+                const resp = await fetch('/step', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await resp.json();
+                const obs = data.observation || {};
+                const bug = obs.bug_report || {};
+                stepCount = obs.steps_taken || stepCount + 1;
+
+                // Reveal data based on action type
+                if (actionType === 'read_body') {
+                    const bodyEl = document.getElementById('bug-body-text');
+                    if (bodyEl) {
+                        bodyEl.className = 'bug-body';
+                        bodyEl.textContent = bug.body || '';
+                    }
+                    btn.innerHTML = '<span class="emoji">📖</span> ✓ Body Revealed';
+                    btn.classList.add('revealed');
+                }
+                else if (actionType === 'read_comments') {
+                    const section = document.getElementById('comments-section');
+                    if (bug.comments && bug.comments.length > 0) {
+                        section.innerHTML = `
+                            <div class="bug-hidden-section">
+                                <div class="section-title">💬 Comments (${bug.comments.length})</div>
+                                ${bug.comments.map(c => `<div class="bug-comment">${esc(c)}</div>`).join('')}
+                            </div>`;
+                    } else {
+                        section.innerHTML = `
+                            <div class="bug-hidden-section">
+                                <div class="section-title">💬 Comments</div>
+                                <p style="font-size:13px;color:var(--text-muted)">No comments on this bug.</p>
+                            </div>`;
+                    }
+                    btn.innerHTML = '<span class="emoji">💬</span> ✓ Comments Revealed';
+                    btn.classList.add('revealed');
+                }
+                else if (actionType === 'check_logs') {
+                    const section = document.getElementById('logs-section');
+                    let logHtml = '<div class="bug-hidden-section"><div class="section-title">📊 System Logs & Signals</div>';
+                    if (bug.stack_trace) logHtml += `<div class="bug-comment" style="font-family:'JetBrains Mono',monospace;font-size:12px">${esc(bug.stack_trace)}</div>`;
+                    if (bug.affected_component) logHtml += `<p style="font-size:13px;color:var(--text-secondary);margin-top:6px">Component: <strong>${esc(bug.affected_component)}</strong></p>`;
+                    if (bug.severity_signals && bug.severity_signals.length > 0) logHtml += `<p style="font-size:13px;color:var(--text-secondary);margin-top:4px">Signals: ${bug.severity_signals.map(s => `<span class="bug-label" style="background:rgba(239,68,68,0.1);color:var(--accent-red)">${esc(s)}</span>`).join(' ')}</p>`;
+                    if (!bug.stack_trace && !bug.affected_component) logHtml += '<p style="font-size:13px;color:var(--text-muted)">No additional log data available.</p>';
+                    logHtml += '</div>';
+                    section.innerHTML = logHtml;
+                    btn.innerHTML = '<span class="emoji">📊</span> ✓ Logs Revealed';
+                    btn.classList.add('revealed');
+                }
+                else if (actionType === 'check_similar') {
+                    const section = document.getElementById('similar-section');
+                    if (bug.related_bugs && bug.related_bugs.length > 0) {
+                        section.innerHTML = `
+                            <div class="bug-hidden-section">
+                                <div class="section-title">🔗 Related Bugs</div>
+                                ${bug.related_bugs.map(b => `<div class="bug-comment">${esc(b)}</div>`).join('')}
+                            </div>`;
+                    } else {
+                        section.innerHTML = `
+                            <div class="bug-hidden-section">
+                                <div class="section-title">🔗 Related Bugs</div>
+                                <p style="font-size:13px;color:var(--text-muted)">No related bugs found.</p>
+                            </div>`;
+                    }
+                    btn.innerHTML = '<span class="emoji">🔗</span> ✓ Checked';
+                    btn.classList.add('revealed');
+                }
+
+                updateStepTracker();
+
+                if (data.done) {
+                    isDone = true;
+                    showResults(data.reward || 0, obs.feedback || '');
+                }
+            } catch (err) {
+                btn.innerHTML = `Error`;
+            }
+        }
+
         async function submitTriage() {
-            if (!hasBug) return;
+            if (!hasBug || isDone) return;
 
             const btn = document.getElementById('btn-submit');
-            btn.innerHTML = '<span class="spinner"></span> Scoring...';
+            btn.innerHTML = '<span class="spinner"></span> Grading...';
             btn.disabled = true;
 
             const selectedLabels = [];
@@ -818,6 +684,7 @@
             });
 
             const action = {
+                action_type: 'submit',
                 priority: document.getElementById('priority').value,
                 labels: selectedLabels,
                 assigned_team: document.getElementById('team').value,
@@ -826,29 +693,38 @@
             };
 
             try {
+                const payload = { action };
+                if (sessionId) payload.session_id = sessionId;
+
                 const resp = await fetch('/step', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action })
+                    body: JSON.stringify(payload)
                 });
                 const data = await resp.json();
                 const reward = data.reward || 0;
                 const obs = data.observation || {};
                 const feedback = obs.feedback || '';
+                stepCount = obs.steps_taken || stepCount + 1;
 
+                updateStepTracker();
                 showResults(reward, feedback);
+                isDone = true;
                 hasBug = false;
+
+                // Disable investigate buttons
+                ['btn-read-body', 'btn-read-comments', 'btn-check-logs', 'btn-check-similar'].forEach(id => {
+                    document.getElementById(id).disabled = true;
+                });
             } catch (err) {
                 document.getElementById('results-area').innerHTML = `
                     <div class="score-display">
                         <div class="score-label">Error</div>
                         <div class="score-value low">!</div>
-                        <p style="color: var(--text-secondary)">${escHtml(err.message)}</p>
-                    </div>
-                `;
+                        <p style="color:var(--text-secondary)">${esc(err.message)}</p>
+                    </div>`;
             }
-
-            btn.innerHTML = 'Submit Triage';
+            btn.innerHTML = '🎯 Submit Triage Decision';
             btn.disabled = true;
         }
 
@@ -858,7 +734,6 @@
             const emoji = reward >= 0.7 ? '🎉' : reward >= 0.4 ? '👍' : '😬';
 
             const feedbackParts = feedback.split(' | ').filter(Boolean);
-
             let feedbackHtml = '';
             if (feedbackParts.length > 0) {
                 feedbackHtml = `
@@ -866,49 +741,45 @@
                         <div class="feedback-title">Grader Feedback</div>
                         ${feedbackParts.map(part => {
                             let icon = '📝';
-                            if (part.includes('✓') || part.includes('0.95')) icon = '✅';
-                            else if (part.includes('✗') || part.includes('0.05')) icon = '❌';
-                            else if (part.includes('~') || part.includes('0.50')) icon = '🔶';
-                            else if (part.includes('⚠')) icon = '⚠️';
-                            return `<div class="feedback-item"><span class="feedback-icon">${icon}</span>${escHtml(part)}</div>`;
+                            if (part.includes('✓') || parseFloat(part.match(/[\d.]+/)?.[0]) >= 0.9) icon = '✅';
+                            else if (part.includes('✗') || parseFloat(part.match(/[\d.]+/)?.[0]) <= 0.1) icon = '❌';
+                            else if (part.includes('~') || part.includes('bonus')) icon = '⭐';
+                            else if (part.includes('⚠') || part.includes('penalty') || part.includes('missed')) icon = '⚠️';
+                            else if (part.includes('⚡')) icon = '⚡';
+                            return `<div class="feedback-item"><span>${icon}</span>${esc(part)}</div>`;
                         }).join('')}
-                    </div>
-                `;
+                    </div>`;
             }
 
             document.getElementById('results-area').innerHTML = `
                 <div class="results">
                     <div class="score-display">
-                        <div class="score-label">Reward Score</div>
+                        <div class="score-label">Reward Score (${stepCount} step${stepCount !== 1 ? 's' : ''} used)</div>
                         <div class="score-value ${cls}">${emoji} ${reward.toFixed(3)}</div>
-                        <div class="score-bar-wrap">
-                            <div class="score-bar ${cls}" id="score-bar"></div>
-                        </div>
-                        <p style="color: var(--text-secondary); font-size: 13px;">
-                            ${pct}% of maximum score on <strong>${currentTask}</strong> task
+                        <div class="score-bar-wrap"><div class="score-bar ${cls}" id="score-bar"></div></div>
+                        <p style="color:var(--text-secondary);font-size:13px">
+                            ${pct}% on <strong>${currentTask}</strong> task
                         </p>
                         ${feedbackHtml}
-                        <div style="margin-top: 16px;">
-                            <button class="btn btn-secondary" onclick="fetchBug()" style="padding: 8px 20px; font-size: 13px;">
+                        <div style="margin-top:14px">
+                            <button class="btn btn-secondary" onclick="fetchBug()" style="padding:8px 20px;font-size:13px">
                                 Try Another Bug →
                             </button>
                         </div>
                     </div>
-                </div>
-            `;
+                </div>`;
 
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
-                    document.getElementById('score-bar').style.width = pct + '%';
+                    const bar = document.getElementById('score-bar');
+                    if (bar) bar.style.width = pct + '%';
                 });
             });
         }
 
-        function toggleLabel(el) {
-            el.classList.toggle('selected');
-        }
+        function toggleLabel(el) { el.classList.toggle('selected'); }
 
-        function escHtml(str) {
+        function esc(str) {
             if (!str) return '';
             const div = document.createElement('div');
             div.textContent = str;
