@@ -6,9 +6,9 @@ sys.path.insert(0, "/app")
 from typing import Tuple, List
 from model import BugReport, TriageAction
 
-# ─────────────────────────────────────────────
+
 # BUG REPORT DATASET
-# ─────────────────────────────────────────────
+
 
 TASKS = {
     "easy": {
@@ -228,18 +228,18 @@ TASKS = {
 }
 
 
-# ─────────────────────────────────────────────
+
 # TASK SAMPLER  — picks a random bug each reset
-# ─────────────────────────────────────────────
+
 
 def sample_bug(task_key: str) -> BugReport:
     """Return a random bug from the given task's pool."""
     return random.choice(TASKS[task_key]["bugs"])
 
 
-# ─────────────────────────────────────────────
+
 # GRADERS
-# ─────────────────────────────────────────────
+
 
 PRIORITY_ORDER = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
 

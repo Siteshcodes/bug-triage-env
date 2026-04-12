@@ -49,21 +49,12 @@ TASKS_META = [
     }
 ]
 
-# ─────────────────────────────────────────────
-# GLOBAL STATEFUL ENVIRONMENT
-# The OpenEnv create_app() creates stateless endpoints that spin up
-# a new environment per request. This breaks our reset→step flow
-# because step() needs the bug from reset().
-# We maintain a shared global instance to fix this.
-# ─────────────────────────────────────────────
+
+
 _global_env = BugTriageEnvironment()
 
 
-# ─────────────────────────────────────────────
-# REMOVE the framework's stateless /reset and /step routes,
-# then add our own stateful versions.
-# ─────────────────────────────────────────────
-# Remove existing /reset and /step routes registered by create_app()
+
 routes_to_remove = []
 for route in app.routes:
     if hasattr(route, "path") and route.path in ("/reset", "/step", "/state"):
@@ -105,9 +96,6 @@ def task_hard():
     return TASKS_META[2]
 
 
-# ─────────────────────────────────────────────
-# CUSTOM STATEFUL /reset and /step endpoints
-# ─────────────────────────────────────────────
 
 @app.post("/reset")
 async def custom_reset(request: Request):
@@ -189,10 +177,6 @@ def custom_state():
     except AttributeError:
         return state.dict()
 
-
-# ─────────────────────────────────────────────
-# Per-task reset shortcuts (convenience)
-# ─────────────────────────────────────────────
 
 @app.post("/tasks/easy/reset")
 def reset_easy():

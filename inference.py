@@ -19,7 +19,6 @@ from typing import List, Optional
 from openai import OpenAI
 from model import TriageAction, TriageObservation, BugReport
 
-# ── config ───────────────────────────────────────────────────────────────
 
 API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
 API_KEY      = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY")
@@ -42,7 +41,7 @@ print(f"[CONFIG] MODEL_NAME={MODEL_NAME}", flush=True)
 print(f"[CONFIG] ENV_BASE_URL={ENV_BASE_URL}", flush=True)
 print(f"[CONFIG] API_KEY={'set' if API_KEY else 'MISSING'}", flush=True)
 
-# ── inlined client ────────────────────────────────────────────────────────
+#inlined client 
 
 def _parse_observation(data: dict) -> TriageObservation:
     try:
@@ -121,7 +120,7 @@ class BugTriageClient:
         self.close()
 
 
-# ── prompt ────────────────────────────────────────────────────────────────
+
 
 SYSTEM_PROMPT = textwrap.dedent("""
     You are a senior software engineering manager.
@@ -148,7 +147,7 @@ SYSTEM_PROMPT = textwrap.dedent("""
 """).strip()
 
 
-# ── logging ───────────────────────────────────────────────────────────────
+
 
 def log_start(task: str, env: str, model: str) -> None:
     print(f"[START] task={task} env={env} model={model}", flush=True)
@@ -177,7 +176,7 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
     )
 
 
-# ── helpers ───────────────────────────────────────────────────────────────
+
 
 def format_bug(obs: TriageObservation) -> str:
     bug = obs.bug_report
@@ -235,13 +234,12 @@ def call_model(client: OpenAI, bug_text: str) -> TriageAction:
     return action
 
 
-# ── main ──────────────────────────────────────────────────────────────────
+
 
 def main() -> None:
     client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
-    # Run each task separately with its own [START]/[STEP]/[END] block
-    # so the validator can count 3 distinct tasks with grader scores.
+
     all_scores = []
 
     with BugTriageClient(base_url=ENV_BASE_URL) as env:
@@ -277,7 +275,7 @@ def main() -> None:
                     done=True,
                 )
 
-                # Score for this task
+                
                 score = sum(rewards) / MAX_TOTAL_REWARD if MAX_TOTAL_REWARD > 0 else 0.0
                 score = min(max(score, 0.01), 0.99)
                 success = score >= SUCCESS_SCORE_THRESHOLD
@@ -294,7 +292,7 @@ def main() -> None:
 
             time.sleep(0.5)
 
-    # Summary
+  
     avg_score = sum(all_scores) / len(all_scores) if all_scores else 0.0
     print(f"[SUMMARY] tasks={len(all_scores)} avg_score={avg_score:.2f} scores={all_scores}", flush=True)
 

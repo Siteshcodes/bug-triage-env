@@ -5,9 +5,8 @@ from openenv.core.env_server import Action, Observation
 from openenv.core.env_server.types import State
 
 
-# ─────────────────────────────────────────────
-# BugReport — plain Pydantic model
-# ─────────────────────────────────────────────
+
+
 
 class BugReport(BaseModel):
     """A single GitHub-style bug report."""
@@ -22,9 +21,7 @@ class BugReport(BaseModel):
         arbitrary_types_allowed = True
 
 
-# ─────────────────────────────────────────────
-# OpenEnv typed models — ALL pure Pydantic
-# ─────────────────────────────────────────────
+
 
 class TriageAction(Action):
     """What the agent submits as its triage decision."""
