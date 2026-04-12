@@ -1,32 +1,43 @@
 spec_version: 1
 name: bug-triage-env
-version: "1.0.0"
+version: "2.0.0"
 description: >
-  A reinforcement learning environment where an agent triages
-  GitHub-style bug reports by assigning priority, labels, team,
-  and milestone. 3 tasks of increasing difficulty (easy → medium → hard).
+  A multi-step reinforcement learning environment where an AI agent
+  investigates and triages GitHub-style bug reports by assigning
+  priority, labels, team, and milestone. Features progressive
+  information reveal, procedural bug generation (200+ unique bugs),
+  semantic label matching, and a security escalation penalty.
+  3 tasks of increasing difficulty (easy → medium → hard).
 endpoint: https://siteshcodes-bug-triage-env.hf.space
 tags:
   - openenv
   - bug-triage
   - real-world
   - nlp
+  - multi-step
 tasks:
   - id: easy
     name: Priority Assignment
-    description: Assign correct P0-P3 priority to a bug report
+    description: >
+      Investigate a bug report and assign correct P0-P3 priority.
+      Use investigation actions to gather info before submitting.
     difficulty: easy
     grader: server.task:priority_match
     reward_range: [0.0, 1.0]
   - id: medium
     name: Priority Labels and Team
-    description: Assign correct priority, labels, and team routing
+    description: >
+      Investigate and assign correct priority, labels, and team
+      routing. More investigation steps available.
     difficulty: medium
     grader: server.task:priority_label_team
     reward_range: [0.0, 1.0]
   - id: hard
     name: Full Triage
-    description: Full triage with priority, labels, team, milestone and security penalty
+    description: >
+      Full triage with priority, labels, team, milestone and
+      security escalation penalty. Investigation is critical —
+      missing security signals is penalized.
     difficulty: hard
     grader: server.task:full_triage
     reward_range: [0.0, 1.0]
@@ -35,6 +46,7 @@ endpoints:
   step: /step
   state: /state
 actions:
+  action_type: string
   priority: string
   labels: list
   assigned_team: string
@@ -47,3 +59,9 @@ observations:
   reward: float
   feedback: string
   done: bool
+  body_visible: bool
+  comments_visible: bool
+  logs_visible: bool
+  similar_visible: bool
+  steps_taken: int
+  max_steps: int
