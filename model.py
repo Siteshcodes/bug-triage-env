@@ -1,6 +1,6 @@
 # model.py
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from openenv.core.env_server import Action, Observation
 from openenv.core.env_server.types import State
 
@@ -18,8 +18,7 @@ class BugReport(BaseModel):
     stack_trace: str = ""
     affected_component: str = ""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class TriageAction(Action):
@@ -33,8 +32,7 @@ class TriageAction(Action):
     milestone: str = "backlog"
     reasoning: str = ""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class TriageObservation(Observation):
@@ -54,8 +52,7 @@ class TriageObservation(Observation):
     steps_taken: int = 0
     max_steps: int = 6
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class TriageState(State):
@@ -68,5 +65,4 @@ class TriageState(State):
     tasks_completed: List[str] = Field(default_factory=list)
     actions_taken: List[str] = Field(default_factory=list)
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
